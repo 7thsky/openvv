@@ -52,15 +52,16 @@ function OVV() {
     this.asset = null;
 
     var userAgent = window.testOvvConfig && window.testOvvConfig.userAgent ? window.testOvvConfig.userAgent : navigator.userAgent;
-	
-	/**
-     * Returns an object that contains the browser name, version and id {@link OVV#browserIDEnum}		
-     * @param {ua} userAgent
+
+    /**
+     * Returns an object that contains the browser name, version and id {@link OVV#browserIDEnum}
+     * @param {String} ua browser user agent string
+     * @return {{ ID : String, name: String, version: String, ua: String }}
      */
-	function getBrowserDetailsByUserAgent(ua) {
+    function getBrowserDetailsByUserAgent(ua) {
 
 		var getData = function () {			
-			var data = { ID: 0, name: '', version: '' };
+			var data = { ID: 0, name: '', version: '', ua: ua };
 			var dataString = ua;
 			for (var i = 0; i < dataBrowsers.length; i++) {
 				// Fill Browser ID
@@ -79,6 +80,7 @@ function OVV() {
 					break;
 				}
 			}
+
 			return data;
 		};
 
@@ -111,26 +113,23 @@ function OVV() {
 		];
 
 		return getData();
-	};
-	
-	this.browserIDEnum = {
-		MSIE: 1,
-		Firefox: 2,
-		Chrome: 3,
-		Opera: 4,
-		safari: 5
-	};
-	
-	/**
-	* browser:
-	*	{ 
-	*		ID: ,  
-	*	  	name: '', 
-	*	  	version: '' 
-	*	};
-	*/
-	this.browser = getBrowserDetailsByUserAgent(userAgent);
-	
+	}
+
+    /**
+     * @type {{ MSIE: number, Firefox: number, Chrome: number, Opera: number, safari: number }}
+     */
+    this.browserIDEnum = {
+        MSIE     : 1,
+        Firefox  : 2,
+        Chrome   : 3,
+        Opera    : 4,
+        safari   : 5
+    };
+
+    /**
+     * @type {{ ID: Number, name: String, version: String }}
+     */
+    this.browser = getBrowserDetailsByUserAgent(userAgent);
 
     /**
      * The interval in which ActionScript will poll OVV for viewability
@@ -201,8 +200,8 @@ function OVV() {
     };
 
     /**
-     * Retreives an {@link OVVAsset} based on its ID
-     * @param {String} The id of the element to retreive
+     * Retrieves an {@link OVVAsset} based on its ID
+     * @param {String} id The id of the element to retrieve
      * @returns {OVVAsset|null} The element matching the given ID, or null if
      * one could not be found
      */
@@ -226,10 +225,10 @@ function OVV() {
     /**
      * Subscribe the {func} to the list of {events}. When getPreviousEvents is true all the stored events that were passed will be fired
      * in a chronological order
-     * @param {events} array with all the event names to subscribe to
-     * @param {uid} asset identifier
-     * @param {func} a function to execute once the assert raise the event
-     * @param {getPreviousEvents} if true all buffered event will be triggered
+     * @param {Array.<String>} events array with all the event names to subscribe to
+     * @param {String} uid asset identifier
+     * @param {function(String,String)} func a function to execute once the assert raise the event
+     * @param {Boolean} getPreviousEvents if true all buffered event will be triggered
      */
     this.subscribe = function(events, uid, func, getPreviousEvents) {
 
@@ -254,9 +253,9 @@ function OVV() {
 
     /**
      * Publish {eventName} to all the subscribers. Also, storing the publish event in a buffered array is the capacity wasn't reached
-     * @param {eventName} name of the event to publish
-     * @param {uid} asset identifier
-     * @param {args} argument to send to the published function
+     * @param {String} eventName name of the event to publish
+     * @param {String} uid asset identifier
+     * @param {Array} args argument to send to the published function
      */
     this.publish = function(eventName, uid, args) {
         var eventArgs = {
@@ -284,6 +283,9 @@ function OVV() {
         }
     };
 
+    /**
+     * @return {Number}
+     */
     var getCurrentTime = function() {
         "use strict";
         if (Date.now) {
@@ -292,6 +294,11 @@ function OVV() {
         return (new Date()).getTime();
     };
 
+    /**
+     * @param {*} item
+     * @param {Array} list
+     * @return {Boolean}
+     */
     var contains = function(item, list) {
         for (var i = 0; i < list.length; i++) {
             if (list[i] === item) {
@@ -301,6 +308,10 @@ function OVV() {
         return false;
     };
 
+    /**
+     * @param {function} action
+     * @return {*}
+     */
     var runSafely = function(action) {
         try {
             var ret = action();
@@ -377,7 +388,7 @@ function OVVCheck() {
      * The viewability state measured by the geometry technique. Only populated
      * when OVV.DEBUG is true.
      * @type {String}
-     * @see {@link checkGeometry}
+     * @see {@link OVVAsset#checkGeometry}
      * @see {@link OVV#DEBUG}
      */
     this.geometryViewabilityState = '';
@@ -474,7 +485,7 @@ function OVVCheck() {
      * @see {@link OVVCheck.UNMEASURABLE}
      * @see {@link OVVCheck.VIEWABLE}
      * @see {@link OVVCheck.UNVIEWABLE}
-	 * @see {@link OVVCheck.NOT_READY}
+     * @see {@link OVVCheck.NOT_READY}
      */
     this.viewabilityState = '';
 }
@@ -667,7 +678,7 @@ function OVVAsset(uid) {
      * for {@link OVV#DEBUG} mode.
      * @type {Number}
      */
-    var BEACON_SIZE = $ovv.DEBUG ? 20 : 1;
+    var BEACON_SIZE = $ovv.DEBUG ? 10 : 1;
 
     /**
      * The last known location of the player on the page
@@ -715,13 +726,13 @@ function OVVAsset(uid) {
         check.geometrySupported = !$ovv.IN_IFRAME;
 
         check.focus = isInFocus();
-		if (!player) {
+
+        if (!player) {
             check.error = 'Player not found!';
             return check;
         }
 
-        // if we're in IE or FF and we're in an iframe, return unmeasurable						
-        if (($ovv.browser.ID === $ovv.browserIDEnum.MSIE || $ovv.browser.ID === $ovv.browserIDEnum.Firefox) && $ovv.IN_IFRAME) {			
+        if (!isApplicable()) {
             check.viewabilityState = OVVCheck.UNMEASURABLE;
             if (!$ovv.DEBUG) {
                 return check;
@@ -743,26 +754,39 @@ function OVVAsset(uid) {
         }
 
         var controlBeacon = getBeacon(0);
-		
-		// check to make sure the control beacon is found and its 
+        var _cbVisible = false;
+        var _cbOnScreen = false;
+        var _cbHasIsViewableMethod = false;
+
+        // check to make sure the control beacon is found and its
         // callback has been setup
-        if (controlBeacon && controlBeacon.isViewable) {
+        if (controlBeacon) {
+            try {
+                _cbVisible = controlBeacon.isViewable();
+                _cbHasIsViewableMethod = true;
+            } catch (e) {}
+
+            _cbOnScreen = isOnScreen(controlBeacon);
+
             // the control beacon should always be off screen and not viewable,
             // if that's not true, it can't be used
-            var controlBeaconVisible = isOnScreen(controlBeacon) && controlBeacon.isViewable();
-            check.beaconsSupported = !controlBeaconVisible;
+            check.beaconsSupported = !(_cbOnScreen && _cbVisible);
         } else {
             // if the control beacon wasn't found or it isn't ready yet,
             // then beacons can't be used for this check
             check.beaconsSupported = false;
-        }		
-		
-		if (!beaconsReady()) {
-			check.technique = OVVCheck.BEACON;
-        	check.viewabilityState = OVVCheck.NOT_READY;						
+        }
+
+        if (!check.beaconsSupported) {
+            traceIt('cb(' + controlBeacon + ', ' + _cbVisible + ', ' + _cbOnScreen + ', ' + _cbHasIsViewableMethod + ')');
+        }
+
+        if (!beaconsReady()) {
+            check.technique = OVVCheck.BEACON;
+            check.viewabilityState = OVVCheck.NOT_READY;
         } else if (check.beaconsSupported) { // if the control beacon checked out, and all the beacons are ready proceed
             check.technique = OVVCheck.BEACON;      
-			var viewable = checkBeacons.bind(this)(check);
+            var viewable = checkBeacons.bind(this)(check);
             // certain scenarios return null when the beacons can't guarantee
             // that the player is > 50% viewable, so it's deemed unmeasurable
             if (viewable === null) {
@@ -803,6 +827,8 @@ function OVVAsset(uid) {
      * @param {Number} index The index identifier of the beacon
      */
     this.beaconStarted = function(index) {
+        // todo remove after
+        traceIt('beacon ' + index + ' - ready!!!');
 
         if ($ovv.DEBUG) {
             getBeacon(index).debug();
@@ -848,9 +874,54 @@ function OVVAsset(uid) {
     this.getPlayer = function() {
         return player;
     };
+
     ///////////////////////////////////////////////////////////////////////////
     // PRIVATE FUNCTIONS
     ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @returns {Boolean}
+     */
+    var isApplicable = function() {
+        if (!$ovv.IN_IFRAME) {
+            return true;
+        }
+
+        // beacon technique works in safari, firefox and IE11 on win8.1
+        if ($ovv.browser.ID == $ovv.browserIDEnum.Firefox) {
+            return false;
+        } else if ($ovv.browser.ID == $ovv.browserIDEnum.MSIE &&
+                  (compareVersion('11', $ovv.browser.version) > -1 && navigator.userAgent)) {
+            return false;
+        }
+
+        return true;
+    };
+
+    /**
+     *
+     * @param {String} left
+     * @param {String} right
+     * @returns {Number}
+     */
+    var compareVersion = function(left, right) {
+        if (typeof left + typeof right != 'stringstring') {
+            return NaN;
+        }
+
+        var a = left.split('.');
+        var b = right.split('.');
+
+        for (var i = 0, len = Math.max(a.length, b.length); i < len; i++) {
+            if ((a[i] && !b[i] && parseInt(a[i]) > 0) || (parseInt(a[i]) > parseInt(b[i]))) {
+                return 1;
+            } else if ((b[i] && !a[i] && parseInt(b[i]) > 0) || (parseInt(a[i]) < parseInt(b[i]))) {
+                return -1;
+            }
+        }
+
+        return 0;
+    };
 
     /**
      * Performs the geometry technique to determin viewability. First gathers
@@ -921,7 +992,7 @@ function OVVAsset(uid) {
                 check.percentViewable = Math.floor(visibleObjectArea / totalObjectArea * 100);
             }
         }
-    }
+    };
 
     /**
      * Performs the beacon technique. Queries the state of each beacon and
@@ -941,7 +1012,7 @@ function OVVAsset(uid) {
         var innerCornersVisible = 0;
         check.beacons = new Array(TOTAL_BEACONS);
 
-        //Get player dimensions:
+        // Get player dimensions:
         var objRect = player.getClientRects()[0];
         check.objTop = objRect.top;
         check.objBottom = objRect.bottom;
@@ -949,18 +1020,18 @@ function OVVAsset(uid) {
         check.objRight = objRect.right;
 
         for (var index = 0; index <= TOTAL_BEACONS; index++) {
+            // the control beacon is only involved in determining if the
+            // browser supports beacon measurement, so move on
+            if (index === 0) {
+                check.beacons[0] = false;
+                continue;
+            }
 
             var beacon = getBeacon(index);
             var isViewable = beacon.isViewable();
             var onScreen = isOnScreen(beacon);
 
             check.beacons[index] = isViewable && onScreen;
-
-            // the control beacon is only involved in determining if the 
-            // browser supports beacon measurement, so move on
-            if (index === 0) {
-                continue;
-            }
 
             if (isViewable) {
 
@@ -1001,10 +1072,10 @@ function OVVAsset(uid) {
         // when the center of the player is visible
         if ((beacons[CENTER] === true) &&
             // and 2 adjacent outside corners are visible
-            (beacons[OUTER_TOP_LEFT] === true && beacons[OUTER_TOP_RIGHT] == true) ||
+           ((beacons[OUTER_TOP_LEFT] === true && beacons[OUTER_TOP_RIGHT] == true) ||
             (beacons[OUTER_TOP_LEFT] === true && beacons[OUTER_BOTTOM_LEFT] == true) ||
             (beacons[OUTER_TOP_RIGHT] === true && beacons[OUTER_BOTTOM_RIGHT] == true) ||
-            (beacons[OUTER_BOTTOM_LEFT] === true && beacons[OUTER_BOTTOM_RIGHT] == true)
+            (beacons[OUTER_BOTTOM_LEFT] === true && beacons[OUTER_BOTTOM_RIGHT] == true))
         ) {
             return true;
         }
@@ -1042,12 +1113,7 @@ function OVVAsset(uid) {
      * @returns {Boolean} Whether all beacons have checked in
      */
     var beaconsReady = function() {
-
-        if (!player) {
-            return false;
-        }
-
-        return beaconsStarted === TOTAL_BEACONS;
+        return player && beaconsStarted === TOTAL_BEACONS;
     };
 
     /**
@@ -1056,7 +1122,6 @@ function OVVAsset(uid) {
      * @see {@link positionBeacons}
      */
     var createBeacons = function(url) {
-
         // double checking that our URL was actually set to something
         // (BEACON_SWF_URL is obfuscated here to prevent it from being
         // String substituted by ActionScript)
@@ -1064,33 +1129,38 @@ function OVVAsset(uid) {
             return;
         }
 
+        var html;
+        var swfContainer;
+        var isOldIE = $ovv.browser.ID == $ovv.browserIDEnum.MSIE && !/11.*/.test($ovv.browser.version);
+
         for (var index = 0; index <= TOTAL_BEACONS; index++) {
 
-            var swfContainer = document.createElement('DIV');
+            swfContainer = document.createElement('DIV');
             swfContainer.id = 'OVVBeaconContainer_' + index + '_' + id;
 
             swfContainer.style.position = 'absolute';
             swfContainer.style.zIndex = $ovv.DEBUG ? 99999 : -99999;
 
-            var html =
-                '<object classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="' + BEACON_SIZE + '" height="' + BEACON_SIZE + '">' +
-                '<param name="movie" value="' + url + '" />' +
-                '<param name="quality" value="low" />' +
-                '<param name="flashvars" value="id=' + id + '&index=' + index + '" />' +
-                '<param name="bgcolor" value="#ffffff" />' +
-                '<param name="wmode" value="transparent" />' +
-                '<param name="allowScriptAccess" value="always" />' +
-                '<param name="allowFullScreen" value="false" />' +
-                '<!--[if !IE]>-->' +
-                '<object id="OVVBeacon_' + index + '_' + id + '" type="application/x-shockwave-flash" data="' + url + '" width="' + BEACON_SIZE + '" height="' + BEACON_SIZE + '">' +
-                '<param name="quality" value="low" />' +
-                '<param name="bgcolor" value="#ff0000" />' +
-                '<param name="flashvars" value="id=' + id + '&index=' + index + '" />' +
-                '<param name="wmode" value="transparent" />' +
-                '<param name="allowScriptAccess" value="always" />' +
-                '<param name="allowFullScreen" value="false" />' +
-                '<!--<![endif]-->' +
+            if (isOldIE) {
+                html = '<object id="OVVBeacon_' + index + '_' + id + '" classid="clsid:D27CDB6E-AE6D-11cf-96B8-444553540000" width="' + BEACON_SIZE + '" height="' + BEACON_SIZE + '">' +
+                    '<param name="movie" value="' + url + '" />' +
+                    '<param name="quality" value="low" />' +
+                    '<param name="flashvars" value="id=' + id + '&index=' + index + '" />' +
+                    '<param name="bgcolor" value="#ffffff" />' +
+                    '<param name="wmode" value="transparent" />' +
+                    '<param name="allowScriptAccess" value="always" />' +
+                    '<param name="allowFullScreen" value="false" />' +
                 '</object>';
+            } else {
+                html = '<object id="OVVBeacon_' + index + '_' + id + '" type="application/x-shockwave-flash" data="' + url + '" width="' + BEACON_SIZE + '" height="' + BEACON_SIZE + '">' +
+                    '<param name="quality" value="low" />' +
+                    '<param name="bgcolor" value="#ff0000" />' +
+                    '<param name="flashvars" value="id=' + id + '&index=' + index + '" />' +
+                    '<param name="wmode" value="transparent" />' +
+                    '<param name="allowScriptAccess" value="always" />' +
+                    '<param name="allowFullScreen" value="false" />' +
+                '</object>';
+            }
 
             swfContainer.innerHTML = html;
             document.body.insertBefore(swfContainer, document.body.firstChild);
@@ -1214,16 +1284,22 @@ function OVVAsset(uid) {
      * the browser's viewport
      */
     var isOnScreen = function(element) {
+        var rect, sw, sh;
 
         if (!element) {
             return false;
         }
 
-        var screenWidth = Math.max(document.body.clientWidth, window.innerWidth);
-        var screenHeight = Math.max(document.body.clientHeight, window.innerHeight);
-        var objRect = element.getClientRects()[0];
+        rect = element.getClientRects()[0];
 
-        return (objRect.top < screenHeight && objRect.bottom > 0 && objRect.left < screenWidth && objRect.right > 0);
+        if (!rect) {
+            return false;
+        }
+
+        sw = Math.max(document.body.clientWidth, window.innerWidth);
+        sh = Math.max(document.body.clientHeight, window.innerHeight);
+
+        return (rect.top < sh && rect.bottom > 0 && rect.left < sw && rect.right > 0);
     };
 
     /**
@@ -1247,10 +1323,10 @@ function OVVAsset(uid) {
      * @returns {Element|null} The video player being measured
      */
     var findPlayer = function() {
-
+        var i, l;
         var embeds = document.getElementsByTagName('embed');
 
-        for (var i = 0; i < embeds.length; i++) {
+        for (i = 0, l = embeds.length; i < l; i++) {
             if (embeds[i][id]) {
                 return embeds[i];
             }
@@ -1258,7 +1334,7 @@ function OVVAsset(uid) {
 
         var objs = document.getElementsByTagName('object');
 
-        for (var i = 0; i < objs.length; i++) {
+        for (i = 0, l = objs.length; i < l; i++) {
             if (objs[i][id]) {
                 return objs[i];
             }
@@ -1267,22 +1343,34 @@ function OVVAsset(uid) {
         return null;
     };
 
-    var isInFocus = function() {		
+    /**
+     * @return {Boolean}
+     */
+    var isInFocus = function() {
         var inFocus = true;
-        if (typeof document.hidden !== 'undefined') {
-				inFocus = window.document.hidden ? false : true;
-        } else if (document.hasFocus){
-            inFocus = document.hasFocus();			
-		}
-		
-		if ($ovv.IN_IFRAME  === false && inFocus === true && document.hasFocus){
-            inFocus = document.hasFocus();			
-		}	
-		
+
+        // Opera 12.10 and Firefox 18 and later support
+        // @see https://developer.mozilla.org/en-US/docs/Web/Guide/User_experience/Using_the_Page_Visibility_API
+        if (typeof document.hidden !== "undefined") {
+            inFocus = !document.hidden;
+        } else if (typeof document['mozHidden'] !== "undefined") {
+            inFocus = !document['mozHidden'];
+        } else if (typeof document['msHidden'] !== "undefined") {
+            inFocus = !document['msHidden'];
+        } else if (typeof document['webkitHidden'] !== "undefined") {
+            inFocus = !document['webkitHidden'];
+        } else if (document.hasFocus) {
+            inFocus = document.hasFocus();
+        }
+
+        if ($ovv.IN_IFRAME === false && inFocus === true && document.hasFocus){
+            inFocus = document.hasFocus();
+        }
+
         return inFocus;        
     };
 
-	player = findPlayer();    
+    player = findPlayer();
 
     // only use the beacons if we're in an iframe, but go ahead and add them
     // during debug mode
@@ -1295,6 +1383,12 @@ function OVVAsset(uid) {
         if (player && player.startImpressionTimer)
             player.startImpressionTimer();
     }
+}
+
+function traceIt(msg) {
+    //try {
+    //    console.log(msg);
+    //} catch (e) {}
 }
 
 // initialize the OVV object if it doesn't exist

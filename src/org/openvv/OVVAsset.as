@@ -16,12 +16,13 @@
  */
 package org.openvv {
 
+    import flash.display.DisplayObject;
     import flash.display.Sprite;
     import flash.display.Stage;
     import flash.display.StageDisplayState;
     import flash.events.Event;
-	import flash.events.IEventDispatcher
     import flash.events.EventDispatcher;
+    import flash.events.IEventDispatcher;
     import flash.events.TimerEvent;
     import flash.external.ExternalInterface;
     import flash.utils.Timer;
@@ -93,7 +94,7 @@ package org.openvv {
          * The number of consecutive intervals of viewability required before
          * the VIEWABLE_IMPRESSION event will be fired (2 seconds)
          */
-        public static const VIEWABLE_IMPRESSION_THRESHOLD: Number = 10;				
+        public static const VIEWABLE_IMPRESSION_THRESHOLD: Number = 10;
         
         /**
          * The number of consecutive intervals of unmeasurability required before
@@ -111,7 +112,9 @@ package org.openvv {
          * Hold OVV version. Will past to JavaScript as well $ovv.version
          */
         public static const VERSION: Number = 1;
-        
+
+        // todo refactor
+        public var ad:DisplayObject;
 
         ////////////////////////////////////////////////////////////
         //   ATTRIBUTES 
@@ -136,13 +139,13 @@ package org.openvv {
          * The number of consecutive intervals in which the asset has been
          * viewable. Reset to 0 when the asset is found to be unviewable.
          */
-        private var _intervalsInView: Number;
+        private var _intervalsInView: int;
 
          /**
          * The number of consecutive intervals in which the asset has been
          * unmeasurable. Reset to 0 when the asset is found to be measurable.
          */
-        private var _intervalsUnMeasurable: Number;        
+        private var _intervalsUnMeasurable: int;
 
         /**
          * The RenderMeter which gauges the frame rate of the asset
@@ -157,7 +160,7 @@ package org.openvv {
         /**
          * A reference to the stage. Used for detecting full screen viewing.
          */
-        private var _stage:Stage;
+        private var _stage: Stage;
 
         /**
          * The last recorded ThrottleState
@@ -165,17 +168,17 @@ package org.openvv {
          * @see org.openvv.OVVThrottleType
          * @see http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/events/ThrottleEvent.html
          */
-        private var _throttleState: String;		
+        private var _throttleState: String;
 		
 		/**
 		 * Indicate whether the Impression event was raised
 		 */
-		private var _impressionEventRaised: Boolean = false;
-		
+		private var _impressionEventRaised: Boolean;
+
 		/**
 		 * Indicate whether the ImpressionUnmeasurable event was raised
 		 */
-		private var _impressionUnmeasurableEventRaised: Boolean = false;
+		private var _impressionUnmeasurableEventRaised: Boolean;
 
         private var _startImpressionCheckAutomatically: Boolean;
 
@@ -193,7 +196,7 @@ package org.openvv {
 		/**
 		 * A vector of all OVV events
 		 */
-		private static const OVV_EVENTS:Array = ([OVVEvent.OVVError,OVVEvent.OVVLog, OVVEvent.OVVImpression, OVVEvent.OVVImpressionUnmeasurable]);	
+		private static const OVV_EVENTS:Array = ([OVVEvent.OVVError,OVVEvent.OVVLog, OVVEvent.OVVImpression, OVVEvent.OVVImpressionUnmeasurable]);
 	
 		private var _vpaidEventsDispatcher:IEventDispatcher = null;
 
@@ -212,11 +215,11 @@ package org.openvv {
          * be unavailable.
          * @param id The unique identifier of this OVVAsset. If not supplied,
          * it will be randomly generated.
-         * @param interval The number of milliseconds between polls to
-         * JavaScript for viewability information. Defaults to 250.
+         * @param stage
+         * @param startImpressionCheckAutomatically
          */
         public function OVVAsset(beaconSwfUrl:String = null, id:String = null, stage:Stage = null, startImpressionCheckAutomatically:Boolean = true) {
-            
+
             if (!externalInterfaceIsAvailable()) {
                 return;
             }
@@ -237,11 +240,11 @@ package org.openvv {
                                 .replace(/OVVID/g, _id)
                                 .replace(/INTERVAL/g, POLL_INTERVAL)
                                 .replace(/VERSION/g, VERSION);
-			
-			if (beaconSwfUrl)
-			{
-				ovvAssetSource = ovvAssetSource.replace(/BEACON_SWF_URL/g, beaconSwfUrl);
-			}			            
+
+            if (beaconSwfUrl) {
+                ovvAssetSource = ovvAssetSource.replace(/BEACON_SWF_URL/g, beaconSwfUrl);
+            }
+
             ExternalInterface.call("eval", ovvAssetSource);
         }
 
@@ -267,20 +270,21 @@ package org.openvv {
 		
 		/**
 		 * Register to the vpaidEventsDispatcher VPAID's events and allows 3rd parties to more easily provide video viewability measurement 
-		 * by exposing the VPAID data as well as the viewability data via a JavaScript API. 		 
-		 * @param	vpaidEventsDispatcher object that exposes VPAID events
+		 * by exposing the VPAID data as well as the viewability data via a JavaScript API.
+		 * @param vpaidEventsDispatcher object that exposes VPAID events
 		 */
-		public function initEventsWiring(vpaidEventsDispatcher:IEventDispatcher): void {	
-			if (vpaidEventsDispatcher == null)
+		public function initEventsWiring(vpaidEventsDispatcher:IEventDispatcher): void {
+			if (vpaidEventsDispatcher == null) {
 				throw "You must pass an EventDispatcher to init event wiring";
+            }
 			registerEventHandler(vpaidEventsDispatcher);
 			_vpaidEventsDispatcher = vpaidEventsDispatcher;
 		}
 		
 		/**
 		 * Add a JavaScript resource upon reciveing a given vpaidEvent
-		 * @param	vpaidEvent The name of the VPAID event to add the JavaScript resource upon recived
-		 * @param	tagUrl The JavaScript tag url
+		 * @param vpaidEvent The name of the VPAID event to add the JavaScript resource upon recived
+		 * @param tagUrl The JavaScript tag url
 		 */
 		public function addJavaScriptResourceOnEvent(vpaidEvent:String, tagUrl:String): void {
 			if (_vpaidEventsDispatcher == null)
@@ -302,47 +306,46 @@ package org.openvv {
          * @see org.openvv.OVVCheck
          */
         public function checkViewability(): OVVCheck {
+            var jsResults: Object;
+            var results: OVVCheck;
+
             if (!externalInterfaceIsAvailable()) {
                 return new OVVCheck({
                     "error": "ExternalInterface unavailable"
                 });
             }
 
-            var jsResults: Object = ExternalInterface.call("$ovv.getAssetById('" + _id + "')" + ".checkViewability");
-            var results: OVVCheck = new OVVCheck(jsResults);
-			
-			if (results && !!results.error)
-				raiseError(results);            
+            jsResults = ExternalInterface.call("$ovv.getAssetById('" + _id + "')" + ".checkViewability");
+            results = new OVVCheck(jsResults);
 
-            if (!_stage)
-            {
-                return results;
-            }
-
-            try
-            {
-                results.displayState = _stage.displayState;
-
-                switch (_stage.displayState)
-                {
-                    case StageDisplayState.FULL_SCREEN:
-                    case "fullScreenInteractive": // StageDisplayState.FULL_SCREEN_INTERACTIVE is available >= Flash Player 11.3
-                        results.viewabilityState = OVVCheck.VIEWABLE;
-                        results.viewabilityStateOverrideReason = OVVCheck.FULLSCREEN;
-                        break;
-
-                    case StageDisplayState.NORMAL:
-                        // can't be sure, have to rely on other techniques
-                        break;
+            if (!_stage && ad) {
+                if (!ad.stage) {
+                    ad.addEventListener(Event.ADDED_TO_STAGE, ad_handleAddedToStageAtFirstTime);
+                } else {
+                    _stage = ad.stage;
                 }
             }
-            catch(e:Error)
-            {
-                // Either stage was null or we can't access it due to security
-                // restrictions, either way we can ignore this error
+
+            if (_stage) {
+                checkAndUpdateStageDisplayMode( results );
+            }
+
+            if (results && !!results.error) {
+                raiseError(results);
             }
 
             return results;
+        }
+
+        private function ad_handleAddedToStageAtFirstTime(evt:Event):void
+        {
+            IEventDispatcher( evt.currentTarget ).removeEventListener(
+                Event.ADDED_TO_STAGE, ad_handleAddedToStageAtFirstTime
+            );
+
+            if (!_stage && ad) {
+                _stage = ad.stage;
+            }
         }
 
         /**
@@ -353,8 +356,8 @@ package org.openvv {
             ExternalInterface.call("$ovv.getAssetById('" + _id + "')" + ".dispose");
 
             if (_intervalTimer) {
-                _intervalTimer.stop();
                 _intervalTimer.removeEventListener(TimerEvent.TIMER, onIntervalCheck);
+                _intervalTimer.stop();
                 _intervalTimer = null;
             }
 
@@ -372,11 +375,8 @@ package org.openvv {
         /**
          * Callback function attached to the assets DOM Element which allows
          * JavaScript to identify it.
-         *
-         * @param someData An optional parameter which is ignored
          */
-        protected function flashProbe(someData: * ): void {
-            return;
+        protected function flashProbe(... params):void {
         }
 
         /**
@@ -424,11 +424,11 @@ package org.openvv {
          *
          */
         private function onIntervalCheck(event: TimerEvent): void {
-            var results: Object = checkViewability();
-			raiseLog(results);
+            var results: OVVCheck = checkViewability();
+            raiseLog(results);
 
             _intervalsUnMeasurable = (results.viewabilityState == OVVCheck.UNMEASURABLE) ? _intervalsUnMeasurable + 1 : 0;
-            _intervalsInView = (results.viewabilityState == OVVCheck.VIEWABLE && results.focus == true) ? _intervalsInView + 1 : 0;
+            _intervalsInView = (results.viewabilityState == OVVCheck.VIEWABLE && results.focus) ? _intervalsInView + 1 : 0;
 
             if (_impressionEventRaised == false && _intervalsInView >= VIEWABLE_IMPRESSION_THRESHOLD) {
                 raiseImpression(results);
@@ -436,6 +436,40 @@ package org.openvv {
             else if (_impressionUnmeasurableEventRaised == false && _intervalsUnMeasurable >= UNMEASURABLE_IMPRESSION_THRESHOLD) {
                 raiseImpressionUnmeasurable(results);
             }
+        }
+
+        private function checkAndUpdateStageDisplayMode(results:OVVCheck):OVVCheck
+        {
+            var hasStageAccess:Boolean;
+            var displayState:String = StageDisplayState.NORMAL;
+
+            try {
+                displayState   = _stage.displayState;
+                hasStageAccess = true;
+            } catch(e:Error) {
+                // Either stage was null or we can't access it due to security
+                // restrictions, either way we can ignore this error
+            }
+
+            if (!hasStageAccess && ad) {
+                if ((ad.width - (results.objRight - results.objLeft)) > 10 && (ad.height - (results.objBottom - results.objTop)) > 10) {
+                    displayState = StageDisplayState.FULL_SCREEN;
+                }
+            }
+
+            // StageDisplayState.FULL_SCREEN_INTERACTIVE is available >= Flash Player 11.3
+            if (displayState == StageDisplayState.FULL_SCREEN || displayState == 'fullScreenInteractive') {
+                results.displayState = displayState;
+                results.viewabilityState = OVVCheck.VIEWABLE;
+                results.viewabilityStateOverrideReason = OVVCheck.FULLSCREEN;
+                results.focus = true;
+
+                if (results.technique == OVVCheck.GEOMETRY) {
+                    results.percentViewable = 100;
+                }
+            }
+
+            return results;
         }
 
         /**
@@ -480,32 +514,34 @@ package org.openvv {
         public function get throttleState(): String {
             return _throttleState;
         }
-		
-		////////////////////////////////////////////////////////////
+
+        ////////////////////////////////////////////////////////////
         //   PRIVATE METHODS
         ////////////////////////////////////////////////////////////
-		
-		/**
-		 * Create a function for injecting the JavaScript resource
-		 * @param	tagUrl The JavaScript tag url
-		 * @return a Function for injection the JavaScript resource
-		 */
-		private function onInjectJavaScriptResource(tagUrl:String):Function  {
-			 return function(event:Event):void {
-				if (!externalInterfaceIsAvailable()) {					
-					return;
-				}
-				
-				var injectTag:String = 
-					 'function () {' +
-					 'var tag = document.createElement("script");' +
-					 'tag.src = "' + tagUrl + '";' +
-					 'tag.type="text/javascript";' +
-					 'document.getElementsByTagName("body")[0].appendChild(tag); }';					
-									
-				ExternalInterface.call(injectTag);				
-			  };
-		}
+
+        /**
+         * Create a function for injecting the JavaScript resource
+         * @param tagUrl The JavaScript tag url
+         * @return a Function for injection the JavaScript resource
+         */
+        private function onInjectJavaScriptResource(tagUrl:String):Function  {
+            return function(event:Event):void {
+                var injectTag:String;
+
+                if (!externalInterfaceIsAvailable()) {
+                    return;
+                }
+
+                injectTag = 'function () {' +
+                    'var tag = document.createElement("script");' +
+                    'tag.src = "' + tagUrl + '";' +
+                    'tag.type="text/javascript";' +
+                    'document.getElementsByTagName("body")[0].appendChild(tag); ' +
+                '}';
+
+                ExternalInterface.call( injectTag );
+            };
+        }
 
 		/**
 		 * Register to VPAID and OVV events
@@ -568,7 +604,7 @@ package org.openvv {
 		 */
 		private function publishToJavascript(eventType:String, vpaidData:Object, ovvData:Object):void
 		{	
-			var publishedData:* = {"vpaidData":vpaidData, "ovvData":ovvData}
+			var publishedData:* = {"vpaidData":vpaidData, "ovvData":ovvData};
 			
 			var jsOvvPublish:XML = <script><![CDATA[
 												function(event, id, args) { 
@@ -579,7 +615,7 @@ package org.openvv {
 			ExternalInterface.call(jsOvvPublish, eventType ,_id, publishedData);
 		}
 		
-		private function getEventData(event:Event):Object
+		private static function getEventData(event:Event):Object
 		{
 			var data:Object;
 
