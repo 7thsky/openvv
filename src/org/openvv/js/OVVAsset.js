@@ -144,6 +144,14 @@ function OVV() {
      */
     this.version = VERSION;
 
+    /**
+     * @type {Boolean}
+     */
+    this.isIE11WIN81 = (function(ua) {
+        return /Windows\s*NT\s*6\.3;\s*Trident\/7\.0/.test( ua );
+    })(userAgent);
+
+
     ///////////////////////////////////////////////////////////////////////////
     // PRIVATE ATTRIBUTES
     ///////////////////////////////////////////////////////////////////////////
@@ -887,11 +895,12 @@ function OVVAsset(uid) {
             return true;
         }
 
-        // beacon technique works in safari, firefox and IE11 on win8.1
-        if ($ovv.browser.ID == $ovv.browserIDEnum.Firefox) {
-            return false;
-        } else if ($ovv.browser.ID == $ovv.browserIDEnum.MSIE &&
-                  (compareVersion('11', $ovv.browser.version) > -1 && navigator.userAgent)) {
+        // beacon technique works in safari, chrome and IE11 on win8.1
+        if ($ovv.isIE11WIN81 === true) {
+            return true;
+        }
+
+        if ($ovv.browser.ID == $ovv.browserIDEnum.MSIE || $ovv.browser.ID == $ovv.browserIDEnum.Firefox) {
             return false;
         }
 
