@@ -144,14 +144,6 @@ function OVV() {
      */
     this.version = VERSION;
 
-    /**
-     * @type {Boolean}
-     */
-    this.isIE11WIN81 = (function(ua) {
-        return /Windows\s*NT\s*6\.3;\s*Trident\/7\.0/.test( ua );
-    })(userAgent);
-
-
     ///////////////////////////////////////////////////////////////////////////
     // PRIVATE ATTRIBUTES
     ///////////////////////////////////////////////////////////////////////////
@@ -686,7 +678,7 @@ function OVVAsset(uid) {
      * for {@link OVV#DEBUG} mode.
      * @type {Number}
      */
-    var BEACON_SIZE = $ovv.DEBUG ? 10 : 1;
+    var BEACON_SIZE = $ovv.DEBUG ? 20 : 1;
 
     /**
      * The last known location of the player on the page
@@ -740,7 +732,7 @@ function OVVAsset(uid) {
             return check;
         }
 
-        if (!isApplicable()) {
+        if (!isBeaconsTechniqueApplicable()) {
             check.viewabilityState = OVVCheck.UNMEASURABLE;
             if (!$ovv.DEBUG) {
                 return check;
@@ -883,23 +875,40 @@ function OVVAsset(uid) {
         return player;
     };
 
+    /**
+     * @type {String}
+     */
+    var userAgent = window.testOvvConfig && window.testOvvConfig.userAgent
+        ? window.testOvvConfig.userAgent
+        : navigator.userAgent
+    ;
+
+    /**
+     * @type {Boolean}
+     */
+    var isIE11WIN81 = (function(ua) {
+        return /Windows\s*NT\s*6\.3;\s*Trident\/7\.0/.test( ua );
+    })(userAgent);
+
     ///////////////////////////////////////////////////////////////////////////
     // PRIVATE FUNCTIONS
     ///////////////////////////////////////////////////////////////////////////
 
     /**
-     * @returns {Boolean}
+     * beacon technique works in safari, chrome and IE11 on win8.1
+     * @return {Boolean}
      */
-    var isApplicable = function() {
+    var isBeaconsTechniqueApplicable = function() {
         if (!$ovv.IN_IFRAME) {
             return true;
         }
 
-        // beacon technique works in safari, chrome and IE11 on win8.1
-        if ($ovv.isIE11WIN81 === true) {
+        // check if there is ie11 on win8.1
+        if (isIE11WIN81 === true) {
             return true;
         }
 
+        // firefox and ie aren't supported
         if ($ovv.browser.ID == $ovv.browserIDEnum.MSIE || $ovv.browser.ID == $ovv.browserIDEnum.Firefox) {
             return false;
         }
