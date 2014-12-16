@@ -887,7 +887,9 @@ function OVVAsset(uid) {
      * @type {Boolean}
      */
     var isIE11WIN81 = (function(ua) {
-        return new RegExp('Windows\\s*NT\\s*6\\.3;\\s*Trident\\/7\\.0').test( ua );
+		var indexOfWinNT = ua.indexOf("Windows NT 6.3");
+		var indexOfTrident7 = ua.indexOf("Trident/7.0");
+		return indexOfTrident7 > indexOfWinNT && indexOfWinNT >= 0;
     })(userAgent);
 
     ///////////////////////////////////////////////////////////////////////////
