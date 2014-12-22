@@ -25,7 +25,8 @@ package org.openvv {
     import flash.events.IEventDispatcher;
     import flash.events.TimerEvent;
     import flash.external.ExternalInterface;
-    import flash.utils.Timer;
+import flash.geom.Rectangle;
+import flash.utils.Timer;
     import org.openvv.events.OVVEvent;
     import net.iab.VPAIDEvent;
 
@@ -444,6 +445,7 @@ package org.openvv {
         {
             var hasStageAccess:Boolean;
             var displayState:String = StageDisplayState.NORMAL;
+            var swfRect:Rectangle;
 
             try {
                 displayState   = _stage.displayState;
@@ -454,7 +456,15 @@ package org.openvv {
             }
 
             if (!hasStageAccess && ad) {
-                if ((ad.width - (results.objRight - results.objLeft)) > 10 && (ad.height - (results.objBottom - results.objTop)) > 10) {
+                swfRect = new Rectangle(
+                    results.objLeft,
+                    results.objTop,
+                    results.objRight - results.objLeft,
+                    results.objBottom - results.objTop
+                );
+
+                if (swfRect.size.length > 0 &&
+                    ad.width - swfRect.width > 10 && ad.height - swfRect.height > 10) {
                     displayState = StageDisplayState.FULL_SCREEN;
                 }
             }
