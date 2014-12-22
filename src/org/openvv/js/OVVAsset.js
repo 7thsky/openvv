@@ -1394,7 +1394,7 @@ function OVVAsset(uid) {
 
     // only use the beacons if we're in an iframe, but go ahead and add them
     // during debug mode
-    if ($ovv.IN_IFRAME || $ovv.DEBUG) {
+    if (isBeaconsTechniqueApplicable() || $ovv.DEBUG) {
         // 'BEACON_SWF_URL' is String substituted from ActionScript
         createBeacons.bind(this)('BEACON_SWF_URL');
     } else {

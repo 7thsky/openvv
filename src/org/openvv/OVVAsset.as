@@ -326,12 +326,14 @@ package org.openvv {
                 }
             }
 
-            if (_stage) {
+            // if we got valid object from js call
+            // in case of js runtime error and marshallException = false jsResults is null
+            if (_stage && jsResults) {
                 checkAndUpdateStageDisplayMode( results );
             }
 
             if (results && !!results.error) {
-                raiseError(results);
+                raiseError( results );
             }
 
             return results;
