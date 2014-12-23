@@ -723,7 +723,7 @@ function OVVAsset(uid) {
         var check = new OVVCheck();
         check.id = id;
         check.inIframe = $ovv.IN_IFRAME;
-        check.geometrySupported = !$ovv.IN_IFRAME;
+        check.geometrySupported = isGeometryTechniqueApplicable();
 
         check.focus = isInFocus();
 
@@ -732,7 +732,7 @@ function OVVAsset(uid) {
             return check;
         }
 
-        if (!isBeaconsTechniqueApplicable()) {
+        if (!isGeometryTechniqueApplicable() && !isBeaconsTechniqueApplicable()) {
             check.viewabilityState = OVVCheck.UNMEASURABLE;
             if (!$ovv.DEBUG) {
                 return check;
@@ -827,7 +827,6 @@ function OVVAsset(uid) {
      * @param {Number} index The index identifier of the beacon
      */
     this.beaconStarted = function(index) {
-        // todo remove after
         traceIt('beacon ' + index + ' - ready!!!');
 
         if ($ovv.DEBUG) {
@@ -897,12 +896,19 @@ function OVVAsset(uid) {
     ///////////////////////////////////////////////////////////////////////////
 
     /**
+     * @return {Boolean}
+     */
+    var isGeometryTechniqueApplicable = function() {
+        return !$ovv.IN_IFRAME;
+    };
+
+    /**
      * beacon technique works in safari, chrome and IE11 on win8.1
      * @return {Boolean}
      */
     var isBeaconsTechniqueApplicable = function() {
         if (!$ovv.IN_IFRAME) {
-            return true;
+            return false;
         }
 
         // check if there is ie11 on win8.1
