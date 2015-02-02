@@ -917,7 +917,10 @@ function OVVAsset(uid) {
         }
 
         // firefox and ie aren't supported
-        if ($ovv.browser.ID == $ovv.browserIDEnum.MSIE || $ovv.browser.ID == $ovv.browserIDEnum.Firefox) {
+        if ($ovv.browser.ID == $ovv.browserIDEnum.MSIE ||
+            $ovv.browser.ID == $ovv.browserIDEnum.Firefox ||
+            $ovv.browser.ID == $ovv.browserIDEnum.Opera ||
+            $ovv.browser.ID == $ovv.browserIDEnum.safari) {
             return false;
         }
 
