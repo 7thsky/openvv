@@ -445,17 +445,17 @@ import flash.utils.Timer;
         {
             var hasStageAccess:Boolean;
             var displayState:String = StageDisplayState.NORMAL;
-            //var swfRect:Rectangle;
+            var swfRect:Rectangle;
 
             try {
                 displayState   = _stage.displayState;
-                //hasStageAccess = true;
+                hasStageAccess = true;
             } catch(e:Error) {
                 // Either stage was null or we can't access it due to security
                 // restrictions, either way we can ignore this error
             }
 
-            /*if (!hasStageAccess && ad) {
+            if (!hasStageAccess && ad) {
                 swfRect = new Rectangle(
                     results.objLeft,
                     results.objTop,
@@ -467,7 +467,7 @@ import flash.utils.Timer;
                     ad.width - swfRect.width > 10 && ad.height - swfRect.height > 10) {
                     displayState = StageDisplayState.FULL_SCREEN;
                 }
-            }*/
+            }
 
             // StageDisplayState.FULL_SCREEN_INTERACTIVE is available >= Flash Player 11.3
             if (displayState == StageDisplayState.FULL_SCREEN || displayState == 'fullScreenInteractive') {
