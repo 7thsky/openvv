@@ -732,7 +732,7 @@ function OVVAsset(uid) {
             return check;
         }
 
-        if (!isGeometryTechniqueApplicable() && !isBeaconsTechniqueApplicable()) {
+        if ((!isGeometryTechniqueApplicable() && !isBeaconsTechniqueApplicable()) || (isChromeOnMac && $ovv.IN_IFRAME)) {
             check.viewabilityState = OVVCheck.UNMEASURABLE;
             if (!$ovv.DEBUG) {
                 return check;
@@ -889,6 +889,15 @@ function OVVAsset(uid) {
 		var indexOfWinNT = ua.indexOf("Windows NT 6.3");
 		var indexOfTrident7 = ua.indexOf("Trident/7.0");
 		return indexOfTrident7 > indexOfWinNT && indexOfWinNT >= 0;
+    })(userAgent);
+	
+	/**
+     * @type {Boolean}
+     */
+    var isChromeOnMac = (function(ua) {
+		var isChrome = ($ovv.browser.ID == $ovv.browserIDEnum.Chrome);
+		var isMac = (ua.indexOf("Mac OS X") != -1);
+		return isChrome && isMac;
     })(userAgent);
 
     ///////////////////////////////////////////////////////////////////////////
