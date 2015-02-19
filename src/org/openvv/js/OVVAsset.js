@@ -1107,31 +1107,36 @@ function OVVAsset(uid) {
 
         var beacons = check.beacons;
 
+        // when the center is not visible
+        if (beacons[CENTER] === false) {
+            // and 3 corners are visible
+            if((innerCornersVisible >= 3) || (middleCornersVisible >= 3) || (outerCornersVisible >= 3))
+            {
+                return null;
+            }
+            return false;
+        }
+
         // when the center of the player is visible
-        if ((beacons[CENTER] === true) &&
-            // and 2 adjacent outside corners are visible
-           ((beacons[OUTER_TOP_LEFT] === true && beacons[OUTER_TOP_RIGHT] == true) ||
+
+        // when 2 adjacent outside corners are visible
+        if ((beacons[OUTER_TOP_LEFT] === true && beacons[OUTER_TOP_RIGHT] == true) ||
             (beacons[OUTER_TOP_LEFT] === true && beacons[OUTER_BOTTOM_LEFT] == true) ||
             (beacons[OUTER_TOP_RIGHT] === true && beacons[OUTER_BOTTOM_RIGHT] == true) ||
-            (beacons[OUTER_BOTTOM_LEFT] === true && beacons[OUTER_BOTTOM_RIGHT] == true))
+            (beacons[OUTER_BOTTOM_LEFT] === true && beacons[OUTER_BOTTOM_RIGHT] == true)
         ) {
             return true;
         }
 
-        // when any 3 of the inner corners are visible
-        if (beacons[CENTER] === false && innerCornersVisible >= 3) {
-            return true;
-        }
-
-        // when the center and all of the middle corners are visible
-        if (beacons[CENTER] === true && middleCornersVisible == 4) {
+        // when all of the middle corners are visible
+        if (middleCornersVisible == 4) {
             return true;
         }
 
         // // when top left and bottom right corners are visible
         if ((beacons[OUTER_TOP_LEFT] && beacons[OUTER_BOTTOM_RIGHT]) &&
             // and any of their diagonals are covered
-            (!beacons[MIDDLE_TOP_LEFT] || ![INNER_TOP_LEFT] || !beacons[CENTER] || beacons[INNER_BOTTOM_RIGHT] || beacons[MIDDLE_BOTTOM_RIGHT])
+            (!beacons[MIDDLE_TOP_LEFT] || ![INNER_TOP_LEFT] || !beacons[CENTER] || !beacons[INNER_BOTTOM_RIGHT] || !beacons[MIDDLE_BOTTOM_RIGHT])
         ) {
             return null;
         }
