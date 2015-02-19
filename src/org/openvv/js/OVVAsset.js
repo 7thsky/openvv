@@ -922,7 +922,7 @@ function OVVAsset(uid) {
 
         // check if there is ie11 on win8.1
         if (isIE11WIN81 === true) {
-            return true;
+            return false;
         }
 
         // firefox and ie aren't supported
