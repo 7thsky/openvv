@@ -657,6 +657,12 @@ function OVVAsset(uid) {
      */
     var INNER_BOTTOM_RIGHT = 13;
 
+    /**
+     * millisecond delay between repositioning beacons
+     * @type {number}
+     */
+    var positionBeaconsIntervalDelay = 500;
+
     ///////////////////////////////////////////////////////////////////////////
     // PRIVATE ATTRIBUTES
     ///////////////////////////////////////////////////////////////////////////
@@ -693,6 +699,18 @@ function OVVAsset(uid) {
     var player;
 
     var visibilityBrowserProperty = null;
+
+    /**
+     * hold a reference to a function that get the relevant beacon
+     * @type {function}
+     */
+    var getBeaconFunc = function() {return null};
+
+    /**
+     * hold a reference to a function that get the relevant beacon continer
+     * @type {function}
+     */
+    var getBeaconContainerFunc = function() {return null};
 
     ///////////////////////////////////////////////////////////////////////////
     // PUBLIC FUNCTIONS
@@ -754,19 +772,20 @@ function OVVAsset(uid) {
         }
 
         var controlBeacon = getBeacon(0);
+        var controlBeaconContainer = getBeaconContainer(0);
         var _cbVisible = false;
         var _cbOnScreen = false;
         var _cbHasIsViewableMethod = false;
 
         // check to make sure the control beacon is found and its
         // callback has been setup
-        if (controlBeacon) {
+        if (controlBeacon && controlBeaconContainer) {
             try {
                 _cbVisible = controlBeacon.isViewable();
                 _cbHasIsViewableMethod = true;
             } catch (e) {}
 
-            _cbOnScreen = isOnScreen(controlBeacon);
+            _cbOnScreen = isOnScreen(controlBeaconContainer);
 
             // the control beacon should always be off screen and not viewable,
             // if that's not true, it can't be used
@@ -926,10 +945,7 @@ function OVVAsset(uid) {
         }
 
         // firefox and ie aren't supported
-        if ($ovv.browser.ID == $ovv.browserIDEnum.MSIE ||
-            $ovv.browser.ID == $ovv.browserIDEnum.Firefox ||
-            $ovv.browser.ID == $ovv.browserIDEnum.Opera ||
-            $ovv.browser.ID == $ovv.browserIDEnum.safari) {
+        if ($ovv.browser.ID == $ovv.browserIDEnum.MSIE) {
             return false;
         }
 
@@ -1066,8 +1082,9 @@ function OVVAsset(uid) {
             }
 
             var beacon = getBeacon(index);
+            var beaconContainer = getBeaconContainer(index);
             var isViewable = beacon.isViewable();
-            var onScreen = isOnScreen(beacon);
+            var onScreen = isOnScreen(beaconContainer);
 
             check.beacons[index] = isViewable && onScreen;
 
@@ -1218,6 +1235,62 @@ function OVVAsset(uid) {
         setInterval(positionBeacons.bind(this), 500);
     };
 
+    var createFrameBeacons = function() {
+        for (var index = 0; index <= TOTAL_BEACONS; index++) {
+            var iframe = document.createElement('iframe');
+            iframe.name = iframe.id = 'OVVFrame_' + id + '_' + index;
+            iframe.width = $ovv.DEBUG ? 20 : 1;
+            iframe.height = $ovv.DEBUG ? 20 : 1;
+            iframe.frameBorder = 0;
+            iframe.style.position = 'absolute';
+            iframe.style.zIndex = $ovv.DEBUG ? 99999 : -99999;
+
+            iframe.src = 'javascript: ' +
+            'window.isInViewArea = undefined; ' +
+            'window.wasInViewArea = false; ' +
+            'window.isInView = undefined; ' +
+            'window.wasViewed = false; ' +
+            'window.started = false; ' +
+            'window.index = ' + index + ';' +
+            'window.isViewable = function() { return window.isInView; }; ' +
+            'var cnt = 0; ' +
+            'setTimeout(function() {' +
+            'var span = document.createElement("span");' +
+            'span.id = "ad1";' +
+            'document.body.insertBefore(span, document.body.firstChild);' +
+            '},300);' +
+            'setTimeout(function() {setInterval(' +
+            'function() { ' +
+            'ad1 = document.getElementById("ad1");' +
+            'ad1.innerHTML = window.mozPaintCount > cnt ? "In View" : "Out of View";' +
+            'var paintCount = window.mozPaintCount; ' +
+            'window.isInView = (paintCount>cnt); ' +
+            'cnt = paintCount; ' +
+            'if (parent.$ovv.DEBUG == true) {' +
+            'if(window.isInView === true){' +
+            'document.body.style.background = "green";' +
+            '} else {' +
+            'document.body.style.background = "red";' +
+            '}' +
+            '}' +
+            'if (window.started === false) {' +
+            'parent.$ovv.getAssetById("' + id + '")' + '.beaconStarted(window.index);' +
+            'window.started = true;' +
+            '}' +
+            '}, 500)},400);';
+
+            document.body.insertBefore(iframe, document.body.firstChild);
+        }
+
+        // move the frames to their initial position
+        positionBeacons.bind(this)();
+
+        // it takes ~500ms for beacons to know if they've been moved off
+        // screen, so they're repositioned at this interval so they'll be
+        // ready for the next check
+        setInterval(positionBeacons.bind(this), positionBeaconsIntervalDelay);
+    };
+
     /**
      * Repositions the beacon SWFs on top of the player
      */
@@ -1347,16 +1420,51 @@ function OVVAsset(uid) {
 
     /**
      * @returns {Element|null} A beacon by its index
+     * Use memoize implementation to reduce duplicate document.getElementById calls
      */
-    var getBeacon = function(index) {
+    var getBeacon = (function (index) {
+        return getBeaconFunc(index);
+    }).memoize();
+
+    /**
+     * @returns {Element|null} A beacon by its index
+     */
+    var getFlashBeacon = function (index) {
         return document.getElementById('OVVBeacon_' + index + '_' + id);
+    }
+
+    /**
+     * @returns {Element|null} A beacon frame container by its index
+     */
+    var getFrameBeacon = function (index) {
+        var frame = document.getElementById('OVVFrame_' + id + '_' + index);
+        var contentWindow = null;
+        if (frame) {
+            contentWindow = frame.contentWindow;
+        }
+        return contentWindow;
     };
+
+    /**
+     * @returns {Element|null} A beacon container by its index.
+     * Use memoize implementation to reduce duplicate document.getElementById calls
+     */
+    var getBeaconContainer = (function (index) {
+        return getBeaconContainerFunc(index);
+    }).memoize();
 
     /**
      * @returns {Element|null} A beacon container by its index
      */
-    var getBeaconContainer = function(index) {
+    var getFlashBeaconContainer = function (index) {
         return document.getElementById('OVVBeaconContainer_' + index + '_' + id);
+    };
+
+    /**
+     * @returns {Element|null} A beacon frame container by its index
+     */
+    var getFrameBeaconContainer = function (index) {
+        return document.getElementById('OVVFrame_' + id + '_' + index);
     };
 
     /**
@@ -1419,7 +1527,18 @@ function OVVAsset(uid) {
     // during debug mode
     if (isBeaconsTechniqueApplicable() || $ovv.DEBUG) {
         // 'BEACON_SWF_URL' is String substituted from ActionScript
-        createBeacons.bind(this)('BEACON_SWF_URL');
+        if ($ovv.browser.ID === $ovv.browserIDEnum.Firefox){
+            //Use frame technique to measure viewability in cross domain FF scenario
+            getBeaconFunc = getFrameBeacon;
+            getBeaconContainerFunc = getFrameBeaconContainer;
+            createFrameBeacons.bind(this)();
+        }
+        else {
+            getBeaconFunc = getFlashBeacon;
+            getBeaconContainerFunc = getFlashBeaconContainer;
+            // 'BEACON_SWF_URL' is String substituted from ActionScript
+            createBeacons.bind(this)('BEACON_SWF_URL');
+        }
     } else {
         // since we don't have to wait for beacons to be ready, we start the 
         // impression timer now
@@ -1433,6 +1552,21 @@ function traceIt(msg) {
     //    console.log(msg);
     //} catch (e) {}
 }
+
+// A memoize function to store function results
+Function.prototype.memoized = function(key) {
+    this._cacheValue = this._cacheValue || {};
+    return this._cacheValue[key] !== undefined ?
+        this._cacheValue[key] : // return from cache
+        this._cacheValue[key] = this.apply(this, arguments); // call the function is not exist in cache and store in cache for next time
+};
+
+Function.prototype.memoize = function() {
+    var fn = this;
+    return function() {
+        return fn.memoized.apply(fn, arguments);
+    }
+};
 
 // initialize the OVV object if it doesn't exist
 window.$ovv = window.$ovv || new OVV();
