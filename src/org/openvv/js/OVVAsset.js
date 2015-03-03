@@ -935,6 +935,9 @@ function OVVAsset(uid) {
      * @return {Boolean}
      */
     var isBeaconsTechniqueApplicable = function() {
+        if('BEACON_SWF_URL' == '' || 'BEACON_SWF_URL' == "BEACON" + "_SWF_" + "URL")
+            return false;
+
         if (!$ovv.IN_IFRAME) {
             return false;
         }
@@ -1235,14 +1238,7 @@ function OVVAsset(uid) {
         setInterval(positionBeacons.bind(this), 500);
     };
 
-    var createFrameBeacons = function(url) {
-        // double checking that our URL was actually set to something
-        // (BEACON_SWF_URL is obfuscated here to prevent it from being
-        // String substituted by ActionScript)
-        if (url === '' || url === ('BEACON' + '_SWF_' + 'URL')) {
-            return;
-        }
-
+    var createFrameBeacons = function() {
         for (var index = 0; index <= TOTAL_BEACONS; index++) {
             var iframe = document.createElement('iframe');
             iframe.name = iframe.id = 'OVVFrame_' + id + '_' + index;
@@ -1538,7 +1534,7 @@ function OVVAsset(uid) {
             //Use frame technique to measure viewability in cross domain FF scenario
             getBeaconFunc = getFrameBeacon;
             getBeaconContainerFunc = getFrameBeaconContainer;
-            createFrameBeacons.bind(this)('BEACON_SWF_URL');
+            createFrameBeacons.bind(this)();
         }
         else {
             getBeaconFunc = getFlashBeacon;
