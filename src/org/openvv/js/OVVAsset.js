@@ -1235,7 +1235,14 @@ function OVVAsset(uid) {
         setInterval(positionBeacons.bind(this), 500);
     };
 
-    var createFrameBeacons = function() {
+    var createFrameBeacons = function(url) {
+        // double checking that our URL was actually set to something
+        // (BEACON_SWF_URL is obfuscated here to prevent it from being
+        // String substituted by ActionScript)
+        if (url === '' || url === ('BEACON' + '_SWF_' + 'URL')) {
+            return;
+        }
+
         for (var index = 0; index <= TOTAL_BEACONS; index++) {
             var iframe = document.createElement('iframe');
             iframe.name = iframe.id = 'OVVFrame_' + id + '_' + index;
@@ -1531,7 +1538,7 @@ function OVVAsset(uid) {
             //Use frame technique to measure viewability in cross domain FF scenario
             getBeaconFunc = getFrameBeacon;
             getBeaconContainerFunc = getFrameBeaconContainer;
-            createFrameBeacons.bind(this)();
+            createFrameBeacons.bind(this)('BEACON_SWF_URL');
         }
         else {
             getBeaconFunc = getFlashBeacon;
