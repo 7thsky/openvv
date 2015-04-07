@@ -253,6 +253,19 @@ import flash.utils.Timer;
         //   CLASS METHODS 
         ////////////////////////////////////////////////////////////
 
+        public function initBeaconsOnEvent(vpaidEvent:String): void {
+            if (_vpaidEventsDispatcher == null)
+                throw "initEventsWiring must be called first.";
+            _vpaidEventsDispatcher.addEventListener(vpaidEvent, initBeacons);
+        }
+
+        public function initBeacons(evt:Event = null): void {
+            if (!externalInterfaceIsAvailable()) {
+                return;
+            }
+            ExternalInterface.call("$ovv.getAssetById('" + _id + "')" + ".initBeacons");
+        }
+
         /**
          * @return A Boolean indicating whether JavaScript is available within
          * this container

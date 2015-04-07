@@ -868,10 +868,9 @@ function OVVAsset(uid) {
      */
     this.dispose = function() {
 
-        for (var index = 1; index <= TOTAL_BEACONS; index++) {
+        for (var index = 0; index <= TOTAL_BEACONS; index++) {
             var container = getBeaconContainer(index);
             if (container) {
-                delete beaconsStarted[index];
                 container.parentElement.removeChild(container);
             }
         }
@@ -1517,28 +1516,37 @@ function OVVAsset(uid) {
 
     player = findPlayer();
 
-    // only use the beacons if we're in an iframe, but go ahead and add them
-    // during debug mode
-    if (isBeaconsTechniqueApplicable() || $ovv.DEBUG) {
-        // 'BEACON_SWF_URL' is String substituted from ActionScript
-        if ($ovv.browser.ID === $ovv.browserIDEnum.Firefox){
-            //Use frame technique to measure viewability in cross domain FF scenario
-            getBeaconFunc = getFrameBeacon;
-            getBeaconContainerFunc = getFrameBeaconContainer;
-            createFrameBeacons.bind(this)();
-        }
-        else {
-            getBeaconFunc = getFlashBeacon;
-            getBeaconContainerFunc = getFlashBeaconContainer;
-            // 'BEACON_SWF_URL' is String substituted from ActionScript
-            createBeacons.bind(this)('BEACON_SWF_URL');
-        }
-    } else {
-        // since we don't have to wait for beacons to be ready, we start the 
-        // impression timer now
-        if (player && player.startImpressionTimer)
-            player.startImpressionTimer();
+
+    if ($ovv.browser.ID === $ovv.browserIDEnum.Firefox){
+        //Use frame technique to measure viewability in cross domain FF scenario
+        getBeaconFunc = getFrameBeacon;
+        getBeaconContainerFunc = getFrameBeaconContainer;
     }
+    else {
+        getBeaconFunc = getFlashBeacon;
+        getBeaconContainerFunc = getFlashBeaconContainer;
+    }
+    var that = this;
+    this.initBeacons = function(){
+        // only use the beacons if we're in an iframe, but go ahead and add them
+        // during debug mode
+        if (isBeaconsTechniqueApplicable() || $ovv.DEBUG) {
+            // 'BEACON_SWF_URL' is String substituted from ActionScript
+            if ($ovv.browser.ID === $ovv.browserIDEnum.Firefox){
+                //Use frame technique to measure viewability in cross domain FF scenario
+                createFrameBeacons.bind(that)();
+            }
+            else {
+                // 'BEACON_SWF_URL' is String substituted from ActionScript
+                createBeacons.bind(that)('BEACON_SWF_URL');
+            }
+        } else {
+            // since we don't have to wait for beacons to be ready, we start the
+            // impression timer now
+            if (player && player.startImpressionTimer)
+                player.startImpressionTimer();
+        }
+    };
 }
 
 function traceIt(msg) {
@@ -1550,7 +1558,7 @@ function traceIt(msg) {
 // A memoize function to store function results
 Function.prototype.memoized = function(key) {
     this._cacheValue = this._cacheValue || {};
-    return this._cacheValue[key] !== undefined ?
+    return (this._cacheValue[key] !== undefined && this._cacheValue[key] !== null) ?
         this._cacheValue[key] : // return from cache
         this._cacheValue[key] = this.apply(this, arguments); // call the function is not exist in cache and store in cache for next time
 };
