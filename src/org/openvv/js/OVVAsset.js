@@ -804,7 +804,7 @@ function OVVAsset(uid) {
             check.technique = OVVCheck.BEACON;
             check.viewabilityState = OVVCheck.NOT_READY;
         } else if (check.beaconsSupported) { // if the control beacon checked out, and all the beacons are ready proceed
-            check.technique = OVVCheck.BEACON;      
+            check.technique = OVVCheck.BEACON;
             var viewable = checkBeacons.bind(this)(check);
             // certain scenarios return null when the beacons can't guarantee
             // that the player is > 50% viewable, so it's deemed unmeasurable
@@ -1060,7 +1060,13 @@ function OVVAsset(uid) {
         check.beacons = new Array(TOTAL_BEACONS);
 
         // Get player dimensions:
-        var objRect = player.getClientRects()[0];
+        try{
+            var objRect = player.getClientRects()[0];
+        }
+        catch (e)
+        {
+            objRect = player.getBoundingClientRect();
+        }
         check.objTop = objRect.top;
         check.objBottom = objRect.bottom;
         check.objLeft = objRect.left;
