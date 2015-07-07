@@ -1018,7 +1018,7 @@ function OVVAsset(uid) {
             };
         } else {
             //Get player dimensions:
-            var objRect = player.getClientRects()[0];
+            var objRect = getObjectRect(player);
             check.objTop = objRect.top;
             check.objBottom = objRect.bottom;
             check.objLeft = objRect.left;
@@ -1028,6 +1028,10 @@ function OVVAsset(uid) {
                 objRect.top > check.clientHeight || objRect.left > check.clientWidth) {
                 //Entire object is out of viewport
                 check.percentViewable = 0;
+            } else if (objRect.left > 0 && objRect.top > 0 &&
+                objRect.bottom < check.clientHeight && objRect.right < check.clientWidth) {
+                //Entire object is in viewport
+                check.percentViewable = 100;
             } else {
                 var totalObjectArea = (objRect.right - objRect.left) *
                     (objRect.bottom - objRect.top);
@@ -1060,13 +1064,7 @@ function OVVAsset(uid) {
         check.beacons = new Array(TOTAL_BEACONS);
 
         // Get player dimensions:
-        try{
-            var objRect = player.getClientRects()[0];
-        }
-        catch (e)
-        {
-            objRect = player.getBoundingClientRect();
-        }
+        var objRect = getObjectRect(player);
         check.objTop = objRect.top;
         check.objBottom = objRect.bottom;
         check.objLeft = objRect.left;
@@ -1166,6 +1164,19 @@ function OVVAsset(uid) {
         }
 
         return false;
+    };
+
+    var getObjectRect = function(elem)
+    {
+        var objRect = null;
+        try{
+            objRect = elem.getClientRects()[0];
+        }
+        catch (e)
+        {
+            objRect = elem.getBoundingClientRect();
+        }
+        return objRect;
     };
 
     /**
@@ -1299,7 +1310,7 @@ function OVVAsset(uid) {
             return;
         }
 
-        var playerLocation = player.getClientRects()[0];
+        var playerLocation = getObjectRect(player);
 
         // when we don't have an initial position, or the position hasn't changed 
         if (lastPlayerLocation && (lastPlayerLocation.left === playerLocation.left && lastPlayerLocation.right === playerLocation.right && lastPlayerLocation.top === playerLocation.top && lastPlayerLocation.bottom === playerLocation.bottom)) {
@@ -1405,7 +1416,7 @@ function OVVAsset(uid) {
             return false;
         }
 
-        rect = element.getClientRects()[0];
+        rect = getObjectRect(element);
 
         if (!rect) {
             return false;
