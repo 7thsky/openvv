@@ -1039,14 +1039,17 @@ function OVVAsset(uid, dependencies) {
      * @param {Element} player The HTML Element to measure
      */
     var checkCssInvisibility = function (check, player) {
-        var style = window.getComputedStyle(player, null);
-        var visibility = style.getPropertyValue('visibility');
-        var display = style.getPropertyValue('display');
-        if ( visibility == 'hidden' || display == 'none' ){
-            check.technique = OVVCheck.CSS_INVISIBILITY;
-            check.viewabilityState = OVVCheck.UNVIEWABLE;
-            return true;
+        try {
+            var style = window.getComputedStyle(player, null);
+            var visibility = style.getPropertyValue('visibility');
+            var display = style.getPropertyValue('display');
+            if (visibility == 'hidden' || display == 'none') {
+                check.technique = OVVCheck.CSS_INVISIBILITY;
+                check.viewabilityState = OVVCheck.UNVIEWABLE;
+                return true;
+            }
         }
+        catch (ignore){  }
         return false;
     };
 
@@ -1060,44 +1063,47 @@ function OVVAsset(uid, dependencies) {
      * @param {Element} player The HTML Element to measure
      */
     var checkDomObscuring = function(check, player){
-        var playerRect = player.getBoundingClientRect(),
-            offset = 12, // ToDo: Make sure test points don't overlap beacons.
-            xLeft = playerRect.left+offset,
-            xRight = playerRect.right-offset,
-            yTop = playerRect.top+offset,
-            yBottom = playerRect.bottom-offset,
-            xCenter = Math.floor(playerRect.left+playerRect.width/2),
-            yCenter = Math.floor(playerRect.top+playerRect.height/2),
-            testPoints = [
-                { x:xLeft,   y:yTop },
-                { x:xCenter, y:yTop },
-                { x:xRight,  y:yTop },
-                { x:xLeft,   y:yCenter },
-                { x:xCenter, y:yCenter },
-                { x:xRight,  y:yCenter },
-                { x:xLeft,   y:yBottom },
-                { x:xCenter, y:yBottom },
-                { x:xRight,  y:yBottom }
-            ];
+        try {
+            var playerRect = player.getBoundingClientRect(),
+                offset = 12, // ToDo: Make sure test points don't overlap beacons.
+                xLeft = playerRect.left + offset,
+                xRight = playerRect.right - offset,
+                yTop = playerRect.top + offset,
+                yBottom = playerRect.bottom - offset,
+                xCenter = Math.floor(playerRect.left + playerRect.width / 2),
+                yCenter = Math.floor(playerRect.top + playerRect.height / 2),
+                testPoints = [
+                    {x: xLeft, y: yTop},
+                    {x: xCenter, y: yTop},
+                    {x: xRight, y: yTop},
+                    {x: xLeft, y: yCenter},
+                    {x: xCenter, y: yCenter},
+                    {x: xRight, y: yCenter},
+                    {x: xLeft, y: yBottom},
+                    {x: xCenter, y: yBottom},
+                    {x: xRight, y: yBottom}
+                ];
 
-        for (var p in testPoints) {
-            if (testPoints[p] && testPoints[p].x >= 0 && testPoints[p].y >= 0) {
-                elem = document.elementFromPoint(testPoints[p].x, testPoints[p].y);
+            for (var p in testPoints) {
+                if (testPoints[p] && testPoints[p].x >= 0 && testPoints[p].y >= 0) {
+                    elem = document.elementFromPoint(testPoints[p].x, testPoints[p].y);
 
-                if (elem != null && elem != player && !player.contains(elem)) {
-                    overlappingArea = overlapping(playerRect, elem.getBoundingClientRect());
-                    if (overlappingArea > 0) {
-                        check.percentObscured = 100 * overlapping(playerRect, elem.getBoundingClientRect());
-                        if (check.percentObscured > 50) {
-                            check.percentViewable = 100 - check.percentObscured;
-                            check.technique = OVVCheck.DOM_OBSCURING;
-                            check.viewabilityState = OVVCheck.UNVIEWABLE;
-                            return true;
+                    if (elem != null && elem != player && !player.contains(elem)) {
+                        overlappingArea = overlapping(playerRect, elem.getBoundingClientRect());
+                        if (overlappingArea > 0) {
+                            check.percentObscured = 100 * overlapping(playerRect, elem.getBoundingClientRect());
+                            if (check.percentObscured > 50) {
+                                check.percentViewable = 100 - check.percentObscured;
+                                check.technique = OVVCheck.DOM_OBSCURING;
+                                check.viewabilityState = OVVCheck.UNVIEWABLE;
+                                return true;
+                            }
                         }
                     }
                 }
             }
         }
+        catch (ignore) {}
         return false;
     }
 
@@ -1233,7 +1239,7 @@ function OVVAsset(uid, dependencies) {
         // // when top left and bottom right corners are visible
         if ((beacons[OUTER_TOP_LEFT] && beacons[OUTER_BOTTOM_RIGHT]) &&
                 // and any of their diagonals are covered
-            (!beacons[MIDDLE_TOP_LEFT] || !beacons[INNER_TOP_LEFT] || !beacons[CENTER] || beacons[INNER_BOTTOM_RIGHT] || beacons[MIDDLE_BOTTOM_RIGHT])
+            (!(beacons[MIDDLE_TOP_LEFT] && beacons[INNER_TOP_LEFT] && beacons[CENTER] && beacons[INNER_BOTTOM_RIGHT] && beacons[MIDDLE_BOTTOM_RIGHT]))
         ) {
             return null;
         }
@@ -1241,7 +1247,7 @@ function OVVAsset(uid, dependencies) {
         // when bottom left and top right corners are visible
         if ((beacons[OUTER_BOTTOM_LEFT] && beacons[OUTER_TOP_RIGHT]) &&
                 // and any of their diagonals are covered
-            (!beacons[MIDDLE_BOTTOM_LEFT] || !beacons[INNER_BOTTOM_LEFT] || !beacons[CENTER] || !beacons[INNER_TOP_RIGHT] || !beacons[MIDDLE_TOP_RIGHT])
+            (!(beacons[MIDDLE_BOTTOM_LEFT] && beacons[INNER_BOTTOM_LEFT] && beacons[CENTER] && beacons[INNER_TOP_RIGHT] && beacons[MIDDLE_TOP_RIGHT]))
         ) {
             return null;
         }
