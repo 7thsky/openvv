@@ -862,114 +862,128 @@ function OVVAsset(uid, dependencies) {
      * @see {@link checkBeacons}
      */
     this.checkViewability = function () {
-        var check = new OVVCheck();
-        check.id = id;
-        check.inIframe = $ovv.IN_IFRAME;
-        check.geometrySupported = $ovv.geometrySupported;
-        check.focus = isInFocus();
-        if (!player) {
-            check.error = 'Player not found!';
+        try{
+            var check = new OVVCheck();
+            check.id = id;
+            check.inIframe = $ovv.IN_IFRAME;
+            check.geometrySupported = $ovv.geometrySupported;
+            check.focus = isInFocus();
+            if (!player) {
+                check.error = 'Player not found!';
+                return check;
+            }
+            // Check if a CSS attribute value ( 'visibility:hidden' or 'display:none' )
+            // on player or an inheritable containing element is rendering the player invisible.
+            if (checkCssInvisibility(check, player) === true){
+                if ($ovv.DEBUG) {
+                    check.cssViewabilityState = OVVCheck.UNVIEWABLE;
+                }else{
+                    return check;
+                }
+            }
+            // Check if any detectable element in the DOM is obscuring more than 50% of the
+            // player area.
+
+            if (checkDomObscuring(check, player) === true){
+                if ($ovv.DEBUG) {
+                    check.domViewabilityState = OVVCheck.UNVIEWABLE;
+                }else{
+                    return check;
+                }
+            }else{
+                //player.jsTrace("obscured : " + check.percentObscured.toString());
+                //player.jsTrace({OBSCURED:check.percentObscured});
+            }
+
+            // if we're in IE and we're in a cross-domain iframe, return unmeasurable
+            // We are able to measure for same domain iframe ('friendly iframe')
+            if (!beaconSupportCheck.supportsBeacons() && check.geometrySupported === false) {
+                check.viewabilityState = OVVCheck.UNMEASURABLE;
+                if (!$ovv.DEBUG) {
+                    return check;
+                }
+            }
+            // if we can use the geometry method, use it over the beacon method
+            if (check.geometrySupported) {
+                check.technique = OVVCheck.GEOMETRY;
+                checkGeometry(check, player);
+                check.viewabilityState = (check.percentViewable >= 50) ? OVVCheck.VIEWABLE : OVVCheck.UNVIEWABLE;
+                if ($ovv.DEBUG) {
+                    // add an additional field when debugging
+                    check.geometryViewabilityState = check.viewabilityState;
+                } else {
+                    return check;
+                }
+            }
+            var controlBeacon = getBeacon(0);
+            var controlBeaconContainer = getBeaconContainer(0);
+            // check to make sure the control beacon is found and its callback has been setup
+            if (controlBeacon && controlBeacon.isViewable && controlBeaconContainer) {
+                // the control beacon should always be off screen and not viewable,
+                // if that's not true, it can't be used
+                var controlBeaconVisible = isOnScreen(controlBeaconContainer) && controlBeacon.isViewable();
+                check.beaconsSupported = !controlBeaconVisible;
+            } else {
+                // if the control beacon wasn't found or it isn't ready yet,
+                // then beacons can't be used for this check
+                check.beaconsSupported = false;
+            }
+            if (!beaconsReady()) {
+                check.technique = OVVCheck.BEACON;
+                check.viewabilityState = OVVCheck.NOT_READY;
+            } else if (check.beaconsSupported) { // if the control beacon checked out, and all the beacons are ready proceed
+                check.technique = OVVCheck.BEACON;
+                var viewable = checkBeacons(check);
+
+                // certain scenarios return null when the beacons can't guarantee
+                // that the player is > 50% viewable, so it's deemed unmeasurable
+                if (viewable === null) {
+                    check.viewabilityState = OVVCheck.UNMEASURABLE;
+                    // add this informational field when debugging
+                    if ($ovv.DEBUG) {
+                        check.beaconViewabilityState = OVVCheck.UNMEASURABLE;
+                    }
+                } else {
+                    check.viewabilityState = viewable ? OVVCheck.VIEWABLE : OVVCheck.UNVIEWABLE;
+                    // add this informational field when debugging
+                    if ($ovv.DEBUG) {
+                        check.beaconViewabilityState = viewable ? OVVCheck.VIEWABLE : OVVCheck.UNVIEWABLE;
+                    }
+                }
+            } else {
+                check.viewabilityState = OVVCheck.UNMEASURABLE;
+            }
+
+            // in debug mode, reconcile the viewability states from all techniques
+            if ($ovv.DEBUG) {
+                // revert the technique to blank during debug, since both were used
+                check.technique = '';
+                if (check.geometryViewabilityState === null && check.beaconViewabilityState === null) {
+                    check.viewabilityState = OVVCheck.UNMEASURABLE;
+                } else {
+                    var beaconViewable = (check.beaconViewabilityState === OVVCheck.VIEWABLE);
+                    var cssViewable = (check.cssViewabilityState === OVVCheck.VIEWABLE);
+                    var domViewable = (check.domViewabilityState === OVVCheck.VIEWABLE);
+                    var geometryViewable = (check.geometryViewabilityState === OVVCheck.VIEWABLE);
+                    check.viewabilityState = (cssViewable || domViewable || beaconViewable ||
+                    geometryViewable) ? OVVCheck.VIEWABLE : OVVCheck.UNVIEWABLE;
+                }
+            }
+
             return check;
         }
-        // Check if a CSS attribute value ( 'visibility:hidden' or 'display:none' )
-        // on player or an inheritable containing element is rendering the player invisible.
-        if (checkCssInvisibility(check, player) === true){
-            if ($ovv.DEBUG) {
-                check.cssViewabilityState = OVVCheck.UNVIEWABLE;
-            }else{
-                return check;
-            }
+        catch (e)
+        {
+            var message = e.message;
+            if(e.hasOwnProperty("lineNumber"))
+                message = "Line " + e.lineNumber + message;
+            if(e.hasOwnProperty("stack"))
+                message += "         Stack : " + e.stack;
+            message = message.substr(0, 500);
+            if(player && player.hasOwnProperty("onJsError" + uid))
+                player["onJsError" + uid](e.name, message);
+            throw e;
         }
-        // Check if any detectable element in the DOM is obscuring more than 50% of the
-        // player area.
-
-        if (checkDomObscuring(check, player) === true){
-            if ($ovv.DEBUG) {
-                check.domViewabilityState = OVVCheck.UNVIEWABLE;
-            }else{
-                return check;
-            }
-        }else{
-            //player.jsTrace("obscured : " + check.percentObscured.toString());
-            //player.jsTrace({OBSCURED:check.percentObscured});
-        }
-
-        // if we're in IE and we're in a cross-domain iframe, return unmeasurable
-        // We are able to measure for same domain iframe ('friendly iframe')
-        if (!beaconSupportCheck.supportsBeacons() && check.geometrySupported === false) {
-            check.viewabilityState = OVVCheck.UNMEASURABLE;
-            if (!$ovv.DEBUG) {
-                return check;
-            }
-        }
-        // if we can use the geometry method, use it over the beacon method
-        if (check.geometrySupported) {
-            check.technique = OVVCheck.GEOMETRY;
-            checkGeometry(check, player);
-            check.viewabilityState = (check.percentViewable >= 50) ? OVVCheck.VIEWABLE : OVVCheck.UNVIEWABLE;
-            if ($ovv.DEBUG) {
-                // add an additional field when debugging
-                check.geometryViewabilityState = check.viewabilityState;
-            } else {
-                return check;
-            }
-        }
-        var controlBeacon = getBeacon(0);
-        var controlBeaconContainer = getBeaconContainer(0);
-        // check to make sure the control beacon is found and its callback has been setup
-        if (controlBeacon && controlBeacon.isViewable && controlBeaconContainer) {
-            // the control beacon should always be off screen and not viewable,
-            // if that's not true, it can't be used
-            var controlBeaconVisible = isOnScreen(controlBeaconContainer) && controlBeacon.isViewable();
-            check.beaconsSupported = !controlBeaconVisible;
-        } else {
-            // if the control beacon wasn't found or it isn't ready yet,
-            // then beacons can't be used for this check
-            check.beaconsSupported = false;
-        }
-        if (!beaconsReady()) {
-            check.technique = OVVCheck.BEACON;
-            check.viewabilityState = OVVCheck.NOT_READY;
-        } else if (check.beaconsSupported) { // if the control beacon checked out, and all the beacons are ready proceed
-            check.technique = OVVCheck.BEACON;
-            var viewable = checkBeacons(check);
-
-            // certain scenarios return null when the beacons can't guarantee
-            // that the player is > 50% viewable, so it's deemed unmeasurable
-            if (viewable === null) {
-                check.viewabilityState = OVVCheck.UNMEASURABLE;
-                // add this informational field when debugging
-                if ($ovv.DEBUG) {
-                    check.beaconViewabilityState = OVVCheck.UNMEASURABLE;
-                }
-            } else {
-                check.viewabilityState = viewable ? OVVCheck.VIEWABLE : OVVCheck.UNVIEWABLE;
-                // add this informational field when debugging
-                if ($ovv.DEBUG) {
-                    check.beaconViewabilityState = viewable ? OVVCheck.VIEWABLE : OVVCheck.UNVIEWABLE;
-                }
-            }
-        } else {
-            check.viewabilityState = OVVCheck.UNMEASURABLE;
-        }
-
-        // in debug mode, reconcile the viewability states from all techniques
-        if ($ovv.DEBUG) {
-            // revert the technique to blank during debug, since both were used
-            check.technique = '';
-            if (check.geometryViewabilityState === null && check.beaconViewabilityState === null) {
-                check.viewabilityState = OVVCheck.UNMEASURABLE;
-            } else {
-                var beaconViewable = (check.beaconViewabilityState === OVVCheck.VIEWABLE);
-                var cssViewable = (check.cssViewabilityState === OVVCheck.VIEWABLE);
-                var domViewable = (check.domViewabilityState === OVVCheck.VIEWABLE);
-                var geometryViewable = (check.geometryViewabilityState === OVVCheck.VIEWABLE);
-                check.viewabilityState = (cssViewable || domViewable || beaconViewable ||
-                geometryViewable) ? OVVCheck.VIEWABLE : OVVCheck.UNVIEWABLE;
-            }
-        }
-
-        return check;
     };
 
     /**
