@@ -976,11 +976,11 @@ function OVVAsset(uid, dependencies) {
         {
             var message = e.message;
             if(e.hasOwnProperty("lineNumber"))
-                message = "Line " + e.lineNumber + message;
+                message = "Line " + e.lineNumber + " " + message;
             if(e.hasOwnProperty("stack"))
                 message += "         Stack : " + e.stack;
             message = message.substr(0, 500);
-            if(player && player.hasOwnProperty("onJsError" + uid))
+            if(player && player["onJsError" + uid])
                 player["onJsError" + uid](e.name, message);
             throw e;
         }
