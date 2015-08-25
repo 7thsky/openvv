@@ -59,7 +59,7 @@ function OVV() {
 
     this.servingScenarioEnum = { OnPage: 1, SameDomainIframe: 2, CrossDomainIframe: 3 };
 
-    function getServingScenarioType(servingScenarioEnum) {
+    var getServingScenarioType = function (servingScenarioEnum) {
         try {
             if (window.top == window) {
                 return servingScenarioEnum.OnPage;
