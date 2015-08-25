@@ -1078,7 +1078,7 @@ function OVVAsset(uid, dependencies) {
      */
     var checkDomObscuring = function(check, player){
         try {
-            var playerRect = player.getBoundingClientRect(),
+            var playerRect = geometryViewabilityCalculator.getObjectRect(player),
                 offset = 12, // ToDo: Make sure test points don't overlap beacons.
                 xLeft = playerRect.left + offset,
                 xRight = playerRect.right - offset,
@@ -1103,9 +1103,9 @@ function OVVAsset(uid, dependencies) {
                     elem = document.elementFromPoint(testPoints[p].x, testPoints[p].y);
 
                     if (elem != null && elem != player && !player.contains(elem)) {
-                        overlappingArea = overlapping(playerRect, elem.getBoundingClientRect());
+                        overlappingArea = overlapping(playerRect, geometryViewabilityCalculator.getObjectRect(elem));
                         if (overlappingArea > 0) {
-                            check.percentObscured = 100 * overlapping(playerRect, elem.getBoundingClientRect());
+                            check.percentObscured = 100 * overlapping(playerRect, geometryViewabilityCalculator.getObjectRect(elem));
                             if (check.percentObscured > 50) {
                                 check.percentViewable = 100 - check.percentObscured;
                                 check.technique = OVVCheck.DOM_OBSCURING;
@@ -1169,7 +1169,7 @@ function OVVAsset(uid, dependencies) {
         check.beacons = new Array(TOTAL_BEACONS);
 
         //Get player dimensions:
-        var objRect = getObjectRect(player);
+        var objRect = geometryViewabilityCalculator.getObjectRect(player);
         check.objTop = objRect.top;
         check.objBottom = objRect.bottom;
         check.objLeft = objRect.left;
@@ -1267,19 +1267,6 @@ function OVVAsset(uid, dependencies) {
         }
 
         return false;
-    };
-
-    var getObjectRect = function(elem)
-    {
-        var objRect = null;
-        try{
-            objRect = elem.getClientRects()[0];
-        }
-        catch (e)
-        {
-            objRect = elem.getBoundingClientRect();
-        }
-        return objRect;
     };
 
     /**
@@ -1416,7 +1403,7 @@ function OVVAsset(uid, dependencies) {
             return;
         }
 
-        var playerLocation = getObjectRect(player);
+        var playerLocation = geometryViewabilityCalculator.getObjectRect(player);
 
         // when we don't have an initial position, or the position hasn't changed 
         if (!!lastPlayerLocation && !!playerLocation && (lastPlayerLocation.left === playerLocation.left && lastPlayerLocation.right === playerLocation.right && lastPlayerLocation.top === playerLocation.top && lastPlayerLocation.bottom === playerLocation.bottom)) {
@@ -1523,7 +1510,7 @@ function OVVAsset(uid, dependencies) {
 
         var screenWidth = Math.max(document.body.clientWidth, window.innerWidth);
         var screenHeight = Math.max(document.body.clientHeight, window.innerHeight);
-        var objRect = getObjectRect(element);
+        var objRect = geometryViewabilityCalculator.getObjectRect(element);
 
         return (objRect.top < screenHeight && objRect.bottom > 0 && objRect.left < screenWidth && objRect.right > 0);
     };
@@ -1584,10 +1571,10 @@ function OVVAsset(uid, dependencies) {
      * @returns {Element|null} The video player being measured
      */
     var findPlayer = function () {
-
+        var i, l;
         var embeds = document.getElementsByTagName('embed');
 
-        for (var i = 0; i < embeds.length; i++) {
+        for (i = 0, l = embeds.length; i < l; i++) {
             if (embeds[i][id]) {
                 return embeds[i];
             }
@@ -1595,7 +1582,7 @@ function OVVAsset(uid, dependencies) {
 
         var objs = document.getElementsByTagName('object');
 
-        for (var i = 0; i < objs.length; i++) {
+        for (i = 0, l = objs.length; i < l; i++) {
             if (objs[i][id]) {
                 return objs[i];
             }
@@ -1612,6 +1599,15 @@ function OVVAsset(uid, dependencies) {
                 return false;
             }
         }
+
+        //Fix for version conflict when original OVV version does not expose IN_XD_IFRAME property
+        try {
+            var justChecking = window.top.document;
+        }
+        catch (err) {
+            $ovv.IN_XD_IFRAME = true;
+        }
+
 
         // Either we are on an unminified, active tab or 'document.hidden' is not supported).
         // Are we in the active window? ...
@@ -1686,6 +1682,20 @@ function OVVAsset(uid, dependencies) {
 
 
 function OVVGeometryViewabilityCalculator() {
+    var getObjRect = function(elem)
+    {
+        var objRect = null;
+        try{
+            objRect = elem.getClientRects()[0];
+        }
+        catch (e)
+        {
+            objRect = elem.getBoundingClientRect();
+        }
+        return objRect;
+    };
+
+    this.getObjectRect = getObjRect;
 
     this.getViewabilityState = function (element, contextWindow) {
         var minViewPortSize = getMinViewPortSize(),
@@ -1693,7 +1703,7 @@ function OVVGeometryViewabilityCalculator() {
         if (minViewPortSize.area == Infinity) {
             return { error: 'Failed to determine viewport'};
         }
-        var assetRect = element.getBoundingClientRect();
+        var assetRect = getObjRect(element);
         var playerArea = assetRect.width * assetRect.height;
         if ((minViewPortSize.area / playerArea) < 0.5) {
             // no position testing required if viewport is less than half the area of the player
@@ -1731,10 +1741,7 @@ function OVVGeometryViewabilityCalculator() {
             // Viewable percentage is the portion of the ad that's visible divided by the size of the ad
             viewablePercentage = Math.floor( 100 * ( visibleAssetSize.width * visibleAssetSize.height ) / playerArea );
         }
-        /*
-         //Get player dimensions:
-         var assetRect = element.getBoundingClientRect();
-         */
+
         return {
             clientWidth: viewPortSize.width,
             clientHeight: viewPortSize.height,
@@ -1862,7 +1869,7 @@ function OVVGeometryViewabilityCalculator() {
         var resultPosition = { left: 0, right: 0, top: 0, bottom: 0 };
 
         if (element) {
-            var elementRect = element.getBoundingClientRect();
+            var elementRect = getObjRect(element);
             if (currWindow != parentWindow) {
                 resultPosition = getPositionRelativeToViewPort(currWindow.frameElement, parentWindow);
             } else {
