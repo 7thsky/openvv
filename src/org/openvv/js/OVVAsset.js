@@ -55,6 +55,8 @@ function OVV() {
      */
     this.positionInterval;
 
+    this.userAgent = window.testOvvConfig && window.testOvvConfig.userAgent ? window.testOvvConfig.userAgent : navigator.userAgent;
+
     this.servingScenarioEnum = { OnPage: 1, SameDomainIframe: 2, CrossDomainIframe: 3 };
 
     var getServingScenarioType = function (servingScenarioEnum) {
@@ -74,7 +76,7 @@ function OVV() {
 
 
     // To support older versions of OVVAsset
-    var browserData = new OVVBrowser();
+    var browserData = new OVVBrowser(this.userAgent);
 
     this.browser = browserData.getBrowser();
 
@@ -517,12 +519,8 @@ OVVCheck.CSS_INVISIBILITY = 'css_invisibility';
  */
 OVVCheck.DOM_OBSCURING = 'dom_obscuring';
 
-function OVVBrowser()
+function OVVBrowser(userAgent)
 {
-    var userAgent = window.testOvvConfig && window.testOvvConfig.userAgent ? window.testOvvConfig.userAgent : navigator.userAgent;
-    if(!$ovv.hasOwnProperty("userAgent")){
-        $ovv.userAgent = userAgent;
-    }
 
     var browserIDEnum = {
         MSIE: 1,
@@ -621,7 +619,7 @@ function OVVBrowser()
 
 function OVVBeaconSupportCheck()
 {
-    var ovvBrowser = new OVVBrowser();
+    var ovvBrowser = new OVVBrowser($ovv.userAgent);
 
     var browser = ovvBrowser.getBrowser();
     var browserIDEnum = ovvBrowser.getBrowserIDEnum();
