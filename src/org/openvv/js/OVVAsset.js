@@ -1958,7 +1958,7 @@ Function.prototype.memoize = function() {
 };
 var newOVV = new OVV();
 // initialize the OVV object if it doesn't exist
-window.$ovv = window.$ovv || newOVV();
+window.$ovv = window.$ovv || newOVV;
 for(var i in newOVV)
 {
     if(!$ovv.hasOwnProperty(i)){
