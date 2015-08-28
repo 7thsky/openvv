@@ -55,8 +55,6 @@ function OVV() {
      */
     this.positionInterval;
 
-    this.userAgent = window.testOvvConfig && window.testOvvConfig.userAgent ? window.testOvvConfig.userAgent : navigator.userAgent;
-
     this.servingScenarioEnum = { OnPage: 1, SameDomainIframe: 2, CrossDomainIframe: 3 };
 
     var getServingScenarioType = function (servingScenarioEnum) {
@@ -76,7 +74,7 @@ function OVV() {
 
 
     // To support older versions of OVVAsset
-    var browserData = new OVVBrowser(this.userAgent);
+    var browserData = new OVVBrowser();
 
     this.browser = browserData.getBrowser();
 
@@ -519,8 +517,12 @@ OVVCheck.CSS_INVISIBILITY = 'css_invisibility';
  */
 OVVCheck.DOM_OBSCURING = 'dom_obscuring';
 
-function OVVBrowser(userAgent)
+function OVVBrowser()
 {
+    var userAgent = window.testOvvConfig && window.testOvvConfig.userAgent ? window.testOvvConfig.userAgent : navigator.userAgent;
+    if(!$ovv.hasOwnProperty("userAgent")){
+        $ovv.userAgent = userAgent;
+    }
 
     var browserIDEnum = {
         MSIE: 1,
@@ -619,7 +621,7 @@ function OVVBrowser(userAgent)
 
 function OVVBeaconSupportCheck()
 {
-    var ovvBrowser = new OVVBrowser($ovv.userAgent);
+    var ovvBrowser = new OVVBrowser();
 
     var browser = ovvBrowser.getBrowser();
     var browserIDEnum = ovvBrowser.getBrowserIDEnum();
@@ -1600,15 +1602,6 @@ function OVVAsset(uid, dependencies) {
             }
         }
 
-        //Fix for version conflict when original OVV version does not expose IN_XD_IFRAME property
-        try {
-            var justChecking = window.top.document;
-        }
-        catch (err) {
-            $ovv.IN_XD_IFRAME = true;
-        }
-
-
         // Either we are on an unminified, active tab or 'document.hidden' is not supported).
         // Are we in the active window? ...
         if ($ovv.IN_XD_IFRAME) {
@@ -1963,8 +1956,15 @@ Function.prototype.memoize = function() {
         return fn.memoized.apply(fn, arguments);
     }
 };
+var newOVV = new OVV();
 // initialize the OVV object if it doesn't exist
-window.$ovv = window.$ovv || new OVV();
+window.$ovv = window.$ovv || newOVV();
+for(var i in newOVV)
+{
+    if(!$ovv.hasOwnProperty(i)){
+        $ovv[i] = newOVV[i];
+    }
+}
 
 // 'OVVID' is String substituted from AS
 window.$ovv.addAsset(new OVVAsset('OVVID', { geometryViewabilityCalculator: new OVVGeometryViewabilityCalculator() }));
