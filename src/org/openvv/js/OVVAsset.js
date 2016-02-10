@@ -1177,7 +1177,7 @@ function OVVAsset(uid, dependencies) {
 
         for (var index = 0; index <= TOTAL_BEACONS; index++) {
 
-            // the control beacon is only involved in determining if the 
+            // the control beacon is only involved in determining if the
             // browser supports beacon measurement, so move on
             if (index === 0) {
                 continue;
@@ -1332,7 +1332,7 @@ function OVVAsset(uid, dependencies) {
         // move the beacons to their initial position
         positionBeacons.bind(this)();
 
-        // it takes ~500ms for beacons to know if they've been moved off 
+        // it takes ~500ms for beacons to know if they've been moved off
         // screen, so they're repositioned at this interval so they'll be
         // ready for the next check
         this.positionInterval = setInterval(positionBeacons.bind(this), positionBeaconsIntervalDelay);
@@ -1405,7 +1405,7 @@ function OVVAsset(uid, dependencies) {
 
         var playerLocation = geometryViewabilityCalculator.getObjectRect(player);
 
-        // when we don't have an initial position, or the position hasn't changed 
+        // when we don't have an initial position, or the position hasn't changed
         if (!!lastPlayerLocation && !!playerLocation && (lastPlayerLocation.left === playerLocation.left && lastPlayerLocation.right === playerLocation.right && lastPlayerLocation.top === playerLocation.top && lastPlayerLocation.bottom === playerLocation.bottom)) {
             // no need to update positions
             return;
@@ -1489,6 +1489,9 @@ function OVVAsset(uid, dependencies) {
                 left -= (BEACON_SIZE / 2);
                 top -= (BEACON_SIZE / 2);
             }
+
+            left = Math.round(left);
+            top = Math.round(top);
 
             var swfContainer = getBeaconContainer(index);
             swfContainer.style.left = left + 'px';
