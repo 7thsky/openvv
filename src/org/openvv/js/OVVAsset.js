@@ -1618,25 +1618,8 @@ function OVVAsset(uid, dependencies) {
             return window.top.document.hasFocus();
         }
 
-        var inFocus = true;
-
-        // Opera 12.10 and Firefox 18 and later support
-        // @see https://developer.mozilla.org/en-US/docs/Web/Guide/User_experience/Using_the_Page_Visibility_API
-        if (typeof document['mozHidden'] !== "undefined") {
-            inFocus = !document['mozHidden'];
-        } else if (typeof document['msHidden'] !== "undefined") {
-            inFocus = !document['msHidden'];
-        } else if (typeof document['webkitHidden'] !== "undefined") {
-            inFocus = !document['webkitHidden'];
-        } else if (document.hasFocus) {
-            inFocus = document.hasFocus();
-        }
-
-        if ($ovv.IN_IFRAME === false && inFocus === true && document.hasFocus){
-            inFocus = document.hasFocus();
-        }
-
-        return inFocus;
+        //Cannot be determined : Give the benefit of the doubt.
+        return true;
     };
 
     player = findPlayer();
