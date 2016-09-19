@@ -164,7 +164,7 @@ import org.openvv.events.OVVEvent;
          * @see http://help.adobe.com/en_US/FlashPlatform/reference/actionscript/3/flash/events/ThrottleEvent.html
          */
         private var _throttleState: String;
-		
+
 		/**
 		 * Indicate whether the Impression event was raised
 		 */
@@ -242,8 +242,9 @@ import org.openvv.events.OVVEvent;
          * @param adRef A reference to the top DisplayObject of the ad; used
          * to determine full-screen status when player's stage is not available.
          * Optional only for backwards compatibility.
+         * @param testMode:Boolean - whether to run ovv asset with testing capabilities
          */
-        public function OVVAsset( beaconSwfUrl:String = null, id:String = null, adRef:* = null ) {
+        public function OVVAsset( beaconSwfUrl:String = null, id:String = null, adRef:* = null, testMode:Boolean = false ) {
             if (!externalInterfaceIsAvailable()) {
                 return;
             }
@@ -266,16 +267,20 @@ import org.openvv.events.OVVEvent;
 
             var ovvAssetSource: String = "{{OVVAssetJS}}";
             ovvAssetSource = ovvAssetSource
-                                .replace(/OVVID/g, _id)
-                                .replace(/INTERVAL/g, POLL_INTERVAL)
-                                .replace(/OVVBUILDVERSION/g, _buildVersion)
-								.replace(/OVVRELEASEVERSION/g, RELEASE_VERSION);
+                    .replace(/OVVID/g, _id)
+                    .replace(/INTERVAL/g, POLL_INTERVAL)
+                    .replace(/OVVBUILDVERSION/g, _buildVersion)
+                    .replace(/OVVRELEASEVERSION/g, RELEASE_VERSION);
 
-			if (beaconSwfUrl)
-			{
-				ovvAssetSource = ovvAssetSource.replace(/BEACON_SWF_URL/g, beaconSwfUrl);
-			}
+            if (beaconSwfUrl)
+            {
+                ovvAssetSource = ovvAssetSource.replace(/BEACON_SWF_URL/g, beaconSwfUrl);
+            }
             ExternalInterface.call("eval", ovvAssetSource);
+
+            if (testMode) {
+                ExternalInterface.call("$ovv.getAssetById('" + _id + "')" + ".initIntersectionObserver");
+            }
         }
 
         ////////////////////////////////////////////////////////////

@@ -41,7 +41,7 @@ package org.openvv {
          *
          * @see #viewabilityStateOverrideReason
          */
-        public static const FULLSCREEN:String = "fullscreen"
+        public static const FULLSCREEN:String = "fullscreen";
 
         /**
          * When OVVCheck.technique is set to GEOMETRY, the geometry technique
@@ -208,6 +208,12 @@ package org.openvv {
         * The asset volume
         */
         public var volume: Number = -1;
+
+        /**
+         * This is used to pass additional integration observer OVVCheck data during live testing
+         * Can be removed when live testing is over
+         */
+        public var ioViewabilityData: Object;
 
         ////////////////////////////////////////////////////////////
         //   CONSTRUCTOR 
