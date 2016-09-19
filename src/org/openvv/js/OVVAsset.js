@@ -36,7 +36,7 @@ function OVV() {
      * @see {@link OVVCheck#beaconViewabilityState}
      * @see {@link OVVAsset#BEACON_SIZE}
      */
-    this.DEBUG = true;
+    this.DEBUG = false;
 
     /**
      * Whether OpenVV is running within an iframe or not.
@@ -731,22 +731,19 @@ function OVVIntersectionObserver() {
         that.check.objLeft = intersectionObserverCheck.boundingClientRect.left;
         that.check.objRight = intersectionObserverCheck.boundingClientRect.right;
         that.check.viewabilityState = (that.check.percentViewable >= 50) ? OVVCheck.VIEWABLE : OVVCheck.UNVIEWABLE;
+        that.check.ioViewabilityState = that.check.viewabilityState;
+
         if (intersectionObserverCheck.rootBounds) {
             that.check.clientWidth = intersectionObserverCheck.rootBounds.width;
             that.check.clientHeight = intersectionObserverCheck.rootBounds.height;
-        }
-        if ($ovv.DEBUG) {
-            that.check.ioViewabilityState = that.check.viewabilityState;
         }
     };
 
     /**
      * The callback that is called each time the observed element has intersected the root element by a threshold.
-     * or when takeRecords() is invoked
      * @param {IntersectionObserverEntry[]} changes
      */
     var observationCallback = function(changes) {
-        that.observer.takeRecords();
         changes.forEach(function(change) {
             updateOVVCheckObjectWith(change);
         })
@@ -1152,17 +1149,15 @@ function OVVAsset(uid, dependencies) {
                 // revert the technique to blank during debug, since both were used
                 check.technique = '';
                 if (check.geometryViewabilityState === null
-                    && check.beaconViewabilityState === null
-                    && check.ioViewabilityState === null) {
+                    && check.beaconViewabilityState === null) {
                     check.viewabilityState = OVVCheck.UNMEASURABLE;
                 } else {
                     var beaconViewable = (check.beaconViewabilityState === OVVCheck.VIEWABLE);
                     var cssViewable = (check.cssViewabilityState === OVVCheck.VIEWABLE);
                     var domViewable = (check.domViewabilityState === OVVCheck.VIEWABLE);
                     var geometryViewable = (check.geometryViewabilityState === OVVCheck.VIEWABLE);
-                    var intersectionObserverViewable = (check.ioViewabilityState === OVVCheck.VIEWABLE);
                     check.viewabilityState = (cssViewable || domViewable || beaconViewable ||
-                    geometryViewable || intersectionObserverViewable) ? OVVCheck.VIEWABLE : OVVCheck.UNVIEWABLE;
+                    geometryViewable) ? OVVCheck.VIEWABLE : OVVCheck.UNVIEWABLE;
                 }
             }
 
