@@ -663,7 +663,7 @@ function OVVBeaconSupportCheck()
         var ntVersion = ntVersionArr[ntVersionArr.length - 1];
         var isSupportedOSForIE = ntVersion >= WIN_8_1;
         var isFF = browser.ID == browserIDEnum.Firefox;
-        var isWindows = !ntVersion;
+        var isWindows = !!ntVersion;
         var isFFWindows = isFF && isWindows;
         return !isFFWindows && (!isIE || (isSupportedIEVersion && isSupportedOSForIE));
     }
