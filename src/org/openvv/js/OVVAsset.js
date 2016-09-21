@@ -662,7 +662,10 @@ function OVVBeaconSupportCheck()
         var ntVersionArr = browser.os ? browser.os.split(' ') : [0];
         var ntVersion = ntVersionArr[ntVersionArr.length - 1];
         var isSupportedOSForIE = ntVersion >= WIN_8_1;
-        return !isIE || (isSupportedIEVersion && isSupportedOSForIE);
+        var isFF = browser.ID == browserIDEnum.Firefox;
+        var isWindows = !ntVersion;
+        var isFFWindows = isFF && isWindows;
+        return !isFFWindows && (!isIE || (isSupportedIEVersion && isSupportedOSForIE));
     }
 }
 
