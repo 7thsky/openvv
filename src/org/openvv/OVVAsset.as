@@ -244,7 +244,7 @@ import org.openvv.events.OVVEvent;
          * Optional only for backwards compatibility.
          * @param testMode:Boolean - whether to run ovv asset with testing capabilities
          */
-        public function OVVAsset( beaconSwfUrl:String = null, id:String = null, adRef:* = null, testMode:Boolean = false ) {
+        public function OVVAsset( beaconSwfUrl:String = null, id:String = null, adRef:* = null ) {
             if (!externalInterfaceIsAvailable()) {
                 return;
             }
@@ -278,9 +278,6 @@ import org.openvv.events.OVVEvent;
             }
             ExternalInterface.call("eval", ovvAssetSource);
 
-            if (testMode) {
-                ExternalInterface.call("$ovv.getAssetById('" + _id + "')" + ".initIntersectionObserver");
-            }
         }
 
         ////////////////////////////////////////////////////////////
@@ -291,6 +288,10 @@ import org.openvv.events.OVVEvent;
             if (_vpaidEventsDispatcher == null)
                 throw "initEventsWiring must be called first.";
             _vpaidEventsDispatcher.addEventListener(vpaidEvent, initBeacons);
+        }
+
+        public function initTestMode(): void {
+            ExternalInterface.call("$ovv.getAssetById('" + _id + "')" + ".initIntersectionObserver");
         }
 
         public function initBeacons(evt:Event = null): void {
