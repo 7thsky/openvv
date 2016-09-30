@@ -1042,6 +1042,7 @@ function OVVAsset(uid, dependencies) {
     this.checkViewability = function () {
         try{
             var check = new OVVCheck();
+            console.log("Checkpoint 1 - percent :: " + check.percentViewable);
             check.id = id;
             check.inIframe = $ovv.IN_IFRAME;
             check.geometrySupported = $ovv.geometrySupported;
@@ -1051,12 +1052,14 @@ function OVVAsset(uid, dependencies) {
                 check.error = 'Player not found!';
                 return check;
             }
+            console.log("Checkpoint 2 - percent :: " + check.percentViewable);
             // Check if a CSS attribute value ( 'visibility:hidden' or 'display:none' )
             // on player or an inheritable containing element is rendering the player invisible.
             if (checkCssInvisibility(check, player) === true){
                 if ($ovv.DEBUG) {
                     check.cssViewabilityState = OVVCheck.UNVIEWABLE;
                 }else{
+                    console.log("Checkpoint 3 - percent :: " + check.percentViewable);
                     return check;
                 }
             }
@@ -1076,23 +1079,13 @@ function OVVAsset(uid, dependencies) {
 
             // if we're in IE and we're in a cross-domain iframe, return unmeasurable
             // We are able to measure for same domain iframe ('friendly iframe')
-            if (!beaconSupportCheck.supportsBeacons() && check.geometrySupported === false) {
+            if (!beaconSupportCheck.supportsBeacons() &&
+                (check.geometrySupported === false) && (check.intersectionObserverSupported === false)
+            ) {
                 check.viewabilityState = OVVCheck.UNMEASURABLE;
                 if (!$ovv.DEBUG) {
                     return check;
                 }
-            }
-            if (check.intersectionObserverSupported) {
-                ovvIntersectionObserver.observeAd(player);
-
-                // The intersection observer technique  is still in test mode
-                // therefore we don't currently pass the original OVVCheck object, but rather pass an additional one
-                var ioCheck = new OVVCheck();
-                ioCheck.technique = OVVCheck.IO;
-
-                checkIntersectionObserver(ioCheck);
-                // overload the OVVCheck with the additional ioCheck
-                check.ioViewabilityData = ioCheck;
             }
 
             // if we can use the geometry method, use it over the beacon method
@@ -1103,6 +1096,20 @@ function OVVAsset(uid, dependencies) {
                 if ($ovv.DEBUG) {
                     // add an additional field when debugging
                     check.geometryViewabilityState = check.viewabilityState;
+                } else {
+                    return check;
+                }
+            }
+
+            if (check.intersectionObserverSupported) {
+                ovvIntersectionObserver.observeAd(player);
+
+                check.technique = OVVCheck.IO;
+
+                checkIntersectionObserver(check);
+                if ($ovv.DEBUG) {
+                    // add an additional field when debugging
+                    check.ioViewabilityState = check.viewabilityState;
                 } else {
                     return check;
                 }
@@ -1265,6 +1272,7 @@ function OVVAsset(uid, dependencies) {
             if (visibility === 'hidden' || display === 'none') {
                 check.technique = OVVCheck.CSS_INVISIBILITY;
                 check.viewabilityState = OVVCheck.UNVIEWABLE;
+                check.percentViewable = 0;
                 return true;
             }
         }

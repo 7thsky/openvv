@@ -50,12 +50,24 @@ package org.openvv {
         public static const GEOMETRY: String = "geometry";
 
         /**
+         * When OVVCheck.technique is set to IO, the intersection observer technique
+         * was used to determine the viewabilityState
+         */
+        public static const IO:String = "intersection_observer";
+
+        /**
          * OVVCheck.technique is set to CSS_VISIBILITY when a property value of
          * 'visibility:hidden' or 'display:none' on the player's embed object,
          * or on any containing element in the same javascript domain (page or iframe)
          * is used to determine that viewability state is OVVCheck.UNVIEWABLE
          */
-        public static const CSS_VISIBILITY: String = "css_visibility";
+        public static const CSS_INVISIBILITY: String = "css_invisibility";
+
+        /**
+         * OVVCheck.technique is set to DOM_OBSCURING when another DOM element
+         * hides more than 50% of the player, determining that the viewability state is OVVCheck.UNVIEWABLE
+         */
+        public static const DOM_OBSCURING: String = "dom_obscuring";
 
         /**
          * OpenVV was unable to determine whether the asset was viewable or not
