@@ -492,8 +492,10 @@ import org.openvv.events.OVVEvent;
 
             if(!hasStageAccess && ad && (ad is DisplayObject))
             {
-                if ((ad.width - (results.objRight - results.objLeft)) > 10 && (ad.height - (results.objBottom - results.objTop)) > 10) {
-                    displayState = StageDisplayState.FULL_SCREEN;
+                if((results.objRight != results.objLeft) && (results.objBottom != results.objTop)){
+                    if ((ad.width - (results.objRight - results.objLeft)) > 10 && (ad.height - (results.objBottom - results.objTop)) > 10) {
+                        displayState = StageDisplayState.FULL_SCREEN;
+                    }
                 }
             }
             return displayState;
