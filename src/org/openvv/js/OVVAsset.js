@@ -1042,7 +1042,6 @@ function OVVAsset(uid, dependencies) {
     this.checkViewability = function () {
         try{
             var check = new OVVCheck();
-            console.log("Checkpoint 1 - percent :: " + check.percentViewable);
             check.id = id;
             check.inIframe = $ovv.IN_IFRAME;
             check.geometrySupported = $ovv.geometrySupported;
@@ -1052,14 +1051,12 @@ function OVVAsset(uid, dependencies) {
                 check.error = 'Player not found!';
                 return check;
             }
-            console.log("Checkpoint 2 - percent :: " + check.percentViewable);
             // Check if a CSS attribute value ( 'visibility:hidden' or 'display:none' )
             // on player or an inheritable containing element is rendering the player invisible.
             if (checkCssInvisibility(check, player) === true){
                 if ($ovv.DEBUG) {
                     check.cssViewabilityState = OVVCheck.UNVIEWABLE;
                 }else{
-                    console.log("Checkpoint 3 - percent :: " + check.percentViewable);
                     return check;
                 }
             }
