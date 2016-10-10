@@ -290,10 +290,6 @@ import org.openvv.events.OVVEvent;
             _vpaidEventsDispatcher.addEventListener(vpaidEvent, initBeacons);
         }
 
-        public function initTestMode(): void {
-            ExternalInterface.call("$ovv.getAssetById('" + _id + "')" + ".initIntersectionObserver");
-        }
-
         public function initBeacons(evt:Event = null): void {
             if (!externalInterfaceIsAvailable()) {
                 return;
