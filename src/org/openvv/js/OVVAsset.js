@@ -1829,12 +1829,19 @@ function OVVAsset(uid, dependencies) {
     };
 
     player = findPlayer();
-    this.intersectionObserverSupported = (window.IntersectionObserver !== undefined);
-    if (this.intersectionObserverSupported) {
-        ovvIntersectionObserver = new OVVIntersectionObserver();
-        ovvIntersectionObserver.initIntersectionObserver();
-        ovvIntersectionObserver.observeAd(player);
+
+    try {
+        this.intersectionObserverSupported = (window.IntersectionObserver !== undefined);
+        if (this.intersectionObserverSupported) {
+            ovvIntersectionObserver = new OVVIntersectionObserver();
+            ovvIntersectionObserver.initIntersectionObserver();
+            ovvIntersectionObserver.observeAd(player);
+        }
     }
+    catch(e) {
+        this.intersectionObserverSupported = false;
+    }
+
 
     // only use the beacons if geometry is not supported, or we we are in DEBUG mode.
     if ($ovv.geometrySupported === false || $ovv.DEBUG) {
