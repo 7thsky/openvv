@@ -642,9 +642,11 @@ import org.openvv.events.OVVEvent;
             switch(event.type){
                 case VPAIDEvent.AdVideoComplete:
                     // stop time on ad completion
-                    _intervalTimer.stop();
-                    _intervalTimer.removeEventListener(TimerEvent.TIMER, onIntervalCheck);
-                    _intervalTimer = null;
+                        if(_intervalTimer) {
+                            _intervalTimer.stop();
+                            _intervalTimer.removeEventListener(TimerEvent.TIMER, onIntervalCheck);
+                            _intervalTimer = null;
+                        }
                     break;
                 case VPAIDEvent.AdImpression:
                     adStarted = true;

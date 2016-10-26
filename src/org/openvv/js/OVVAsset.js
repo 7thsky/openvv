@@ -1830,12 +1830,14 @@ function OVVAsset(uid, dependencies) {
 
     player = findPlayer();
 
+    var useBeacons = true;
     try {
         this.intersectionObserverSupported = (window.IntersectionObserver !== undefined);
         if (this.intersectionObserverSupported) {
             ovvIntersectionObserver = new OVVIntersectionObserver();
             ovvIntersectionObserver.initIntersectionObserver();
             ovvIntersectionObserver.observeAd(player);
+            useBeacons = false;
         }
     }
     catch(e) {
@@ -1844,7 +1846,7 @@ function OVVAsset(uid, dependencies) {
 
 
     // only use the beacons if geometry is not supported, or we we are in DEBUG mode.
-    if ($ovv.geometrySupported === false || $ovv.DEBUG) {
+    if ($ovv.geometrySupported === false) {
         if ($ovv.browser.ID === $ovv.browserIDEnum.Firefox){
             //Use frame technique to measure viewability in cross domain FF scenario
             getBeaconFunc = getFrameBeacon;
@@ -1854,7 +1856,11 @@ function OVVAsset(uid, dependencies) {
             getBeaconFunc = getFlashBeacon;
             getBeaconContainerFunc = getFlashBeaconContainer;
         }
-    } else if (player && player['onJsReady' + uid]) {
+    } else {
+        useBeacons = false;
+    }
+
+    if(!useBeacons && player && player['onJsReady' + uid]){
         // since we don't have to wait for beacons to be ready, we're ready now
         setTimeout(function () {
             player['onJsReady' + uid]()
@@ -1864,7 +1870,7 @@ function OVVAsset(uid, dependencies) {
     var that = this;
     this.initBeacons = function()
     {
-        if ($ovv.geometrySupported === false || $ovv.DEBUG) {
+        if (useBeacons) {
             if ($ovv.browser.ID === $ovv.browserIDEnum.Firefox){
                 createFrameBeacons.bind(that)();
             }
