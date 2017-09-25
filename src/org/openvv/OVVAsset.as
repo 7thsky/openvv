@@ -175,7 +175,7 @@ import org.openvv.events.OVVEvent;
 		 */
 		private var _impressionUnmeasurableEventRaised: Boolean;
 
-        private var _startImpressionCheckAutomatically: Boolean;
+        private var _lastRemainingTime: Number;
 
 		/**
 		 * A array of all VPAID events
@@ -511,6 +511,13 @@ import org.openvv.events.OVVEvent;
          *
          */
         private function onIntervalCheck(event: TimerEvent): void {
+            if (_vpaidAd != null && _vpaidAd.hasOwnProperty('adRemainingTime')) {
+
+                var currentRemainingTime:Number = _vpaidAd['adRemainingTime'];
+                if(_lastRemainingTime == currentRemainingTime) return;
+                _lastRemainingTime = currentRemainingTime;
+            }
+
             var results: OVVCheck = checkViewability();
             raiseLog(results);
 
